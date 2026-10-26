@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 import json
 import os
 import streamlit.components.v1 as components
@@ -21,7 +21,7 @@ h2, h3 {
     font-size: 20px !important;
     white-space: nowrap !important;
 }
-label, .stSelectbox label, .stTextInput label, .stNumberInput label {
+label, .stSelectbox label, .stTextInput label, .stNumberInput label, .stDateInput label {
     font-size: 16px !important;
     font-weight: bold !important;
     color: #f1f5f9 !important;
@@ -80,8 +80,13 @@ if "plants" not in st.session_state:
                 "meter_name": "AM-01 (7L型)",
                 "container_volume": 7000.0,
                 "total_mass": 4250.0,
+                "calibration_date": "2026-04-01"
             }
         ]
+    else:
+        for m in st.session_state.air_meters:
+            if "calibration_date" not in m:
+                m["calibration_date"] = "2026-04-01"
 
 if "history" not in st.session_state:
     if os.path.exists(HISTORY_FILE):
@@ -137,7 +142,7 @@ if active_tab == "測定":
         plant = plant_options[selected_plant_key]
         st.session_state.active_plant_id = plant.get('id')
         
-        meter_options = {m['meter_name']: m for m in st.session_state.air_meters}
+        meter_options = {f"{m['meter_name']} (校正: {m.get('calibration_date', '未設定')})": m for m in st.session_state.air_meters}
         selected_meter_key = st.selectbox("使用エアメーター選択", list(meter_options.keys()))
         meter = meter_options[selected_meter_key]
         
@@ -269,7 +274,6 @@ elif active_tab == "プラント":
         st.rerun()
 
     if st.session_state.plants:
-        # 登録済み配合の管理（修正・削除）を一番下に配置
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("---")
         st.subheader("登録済み配合の管理（修正・削除）")
@@ -313,24 +317,60 @@ elif active_tab == "メーター":
         m_name = st.text_input("エアメーター識別名", value="AM-01")
         c_vol = st.number_input("⑩ 下容器容積 (cc)", value=7000.0, step=1.0)
         t_mass = st.number_input("⑪ 蓋を含めた全容器質量 (g)", value=4250.0, step=1.0)
+        cal_date = st.date_input("キャリブレーション日（校正日）", value=date.today())
         
         if st.form_submit_button("エアメーターを登録する"):
+            new_m_id = max([m.get('id', 0) for m in st.session_state.air_meters], default=0) + 1
             st.session_state.air_meters.append({
-                "id": len(st.session_state.air_meters)+1,
+                "id": new_m_id,
                 "meter_name": m_name, 
                 "container_volume": c_vol, 
-                "total_mass": t_mass
+                "total_mass": t_mass,
+                "calibration_date": cal_date.strftime("%Y-%m-%d")
             })
             save_master()
             st.success(f"エアメーター「{m_name}」を登録しました！")
+            st.rerun()
             
     if st.session_state.air_meters:
-        st.subheader("登録済みエアメーター一覧")
-        st.dataframe(pd.DataFrame(st.session_state.air_meters), use_container_width=True)
-        if st.button("エアメーター登録をリセット"):
-            st.session_state.air_meters = []
-            save_master()
-            st.rerun()
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("---")
+        st.subheader("登録済みエアメーターの管理（修正・削除）")
+        
+        for idx, m in enumerate(st.session_state.air_meters):
+            m_id = m.get('id', idx)
+            cal_str = m.get('calibration_date', '未設定')
+            with st.expander(f"【{m['meter_name']}】 容積: {m['container_volume']}cc / 質量: {m['total_mass']}g (校正日: {cal_str})"):
+                with st.form(key=f"edit_meter_form_{m_id}"):
+                    edit_m_name = st.text_input("エアメーター識別名", value=m['meter_name'], key=f"edit_m_name_{m_id}")
+                    edit_c_vol = st.number_input("⑩ 下容器容積 (cc)", value=float(m['container_volume']), step=1.0, key=f"edit_c_vol_{m_id}")
+                    edit_t_mass = st.number_input("⑪ 蓋を含めた全容器質量 (g)", value=float(m['total_mass']), step=1.0, key=f"edit_t_mass_{m_id}")
+                    
+                    try:
+                        default_cal_dt = datetime.strptime(m.get('calibration_date', '2026-04-01'), "%Y-%m-%d").date()
+                    except Exception:
+                        default_cal_dt = date.today()
+                    
+                    edit_cal_date = st.date_input("キャリブレーション日（校正日）", value=default_cal_dt, key=f"edit_cal_date_{m_id}")
+                    
+                    submitted_meter_update = st.form_submit_button("この内容で修正を保存する", type="primary")
+                    if submitted_meter_update:
+                        st.session_state.air_meters[idx] = {
+                            "id": m_id,
+                            "meter_name": edit_m_name,
+                            "container_volume": edit_c_vol,
+                            "total_mass": edit_t_mass,
+                            "calibration_date": edit_cal_date.strftime("%Y-%m-%d")
+                        }
+                        save_master()
+                        st.success("エアメーター情報を更新しました！")
+                        st.rerun()
+
+                if st.button("このエアメーターを削除する", key=f"del_meter_{m_id}", type="secondary"):
+                    st.session_state.air_meters.pop(idx)
+                    save_master()
+                    st.warning("エアメーターを削除しました。")
+                    st.rerun()
 
 elif active_tab == "履歴":
     st.header("保存済み測定履歴")
