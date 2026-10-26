@@ -124,6 +124,28 @@ if "device_user_id" not in st.session_state:
 current_user_profile = st.session_state.device_user_id
 HISTORY_FILE = f"history_store_{current_user_profile}.json"
 
+# 端末・プロファイルごとの固有設定（測定者名や前回選択の記憶）
+DEVICE_SETTINGS_FILE = f"device_settings_{current_user_profile}.json"
+
+def load_device_settings():
+    if os.path.exists(DEVICE_SETTINGS_FILE):
+        try:
+            with open(DEVICE_SETTINGS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_device_settings(settings_dict):
+    with open(DEVICE_SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings_dict, f, ensure_ascii=False, indent=4)
+
+device_settings = load_device_settings()
+default_inspector = device_settings.get("inspector_name", "内藤 祐介")
+default_plant_id = device_settings.get("active_plant_id", 1)
+default_meter_name = device_settings.get("meter_name", "")
+
+
 if "plants" not in st.session_state:
     if os.path.exists(MASTER_FILE):
         try:
@@ -166,7 +188,7 @@ if "meas_site_name_input" not in st.session_state:
 if "meas_project_name_input" not in st.session_state:
     st.session_state.meas_project_name_input = "〇〇道路改良工事"
 if "meas_inspector_input" not in st.session_state:
-    st.session_state.meas_inspector_input = "内藤 祐介"
+    st.session_state.meas_inspector_input = default_inspector
 
 if "history" not in st.session_state:
     if os.path.exists(HISTORY_FILE):
@@ -444,7 +466,12 @@ else:
                 st.session_state.active_plant_id = plant.get('id')
                 
                 meter_options = {f"{m['meter_name']} (校正: {m.get('calibration_date', '未設定')})": m for m in st.session_state.air_meters}
-                selected_meter_key = st.selectbox("使用エアメーター選択", list(meter_options.keys()), key="measurement_meter_select")
+                meter_default_idx = 0
+                for idx, (k, m_obj) in enumerate(meter_options.items()):
+                    if m_obj.get('meter_name') == default_meter_name:
+                        meter_default_idx = idx
+                        break
+                selected_meter_key = st.selectbox("使用エアメーター選択", list(meter_options.keys()), index=meter_default_idx, key="measurement_meter_select")
                 meter = meter_options[selected_meter_key]
                 
                 st.session_state.meas_container_vol = meter['container_volume']
@@ -501,6 +528,15 @@ else:
                     st.session_state.meas_site_name_input = site_name
                     st.session_state.meas_project_name_input = project_name
                     st.session_state.meas_inspector_input = inspector_name
+                    st.session_state.active_plant_id = plant.get('id', 1)
+                    
+                    # 端末設定を永続保存
+                    save_device_settings({
+                        "inspector_name": inspector_name,
+                        "active_plant_id": plant.get('id', 1),
+                        "meter_name": meter.get('meter_name', '')
+                    })
+                    
                     st.session_state.show_exact_result_view = True
 
     elif active_tab == "プラント":
