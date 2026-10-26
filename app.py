@@ -60,13 +60,13 @@ h1 {
 h3, p, label {
     color: #000000 !important;
 }
-.yellow-btn button, .stButton button, div[data-testid="stFormSubmitButton"] button, div[data-testid="stDownloadButton"] button, div[data-testid="stFileUploader"] button {
+.yellow-btn button, .stButton button, div[data-testid="stDownloadButton"] button, div[data-testid="stFileUploader"] button {
     background-color: #eab308 !important;
     color: #ffffff !important;
     font-weight: bold !important;
     border: none !important;
 }
-.yellow-btn button *, .stButton button *, div[data-testid="stFormSubmitButton"] button *, div[data-testid="stDownloadButton"] button *, div[data-testid="stFileUploader"] button * {
+.yellow-btn button *, .stButton button *, div[data-testid="stDownloadButton"] button *, div[data-testid="stFileUploader"] button * {
     color: #ffffff !important;
 }
 div[data-testid="stDownloadButton"] button {
@@ -83,7 +83,7 @@ div[data-testid="stFileUploader"] button {
 div[data-testid="stFileUploader"] button * {
     color: #ffffff !important;
 }
-.yellow-btn button:hover, .stButton button:hover, div[data-testid="stFormSubmitButton"] button:hover {
+.yellow-btn button:hover, .stButton button:hover {
     background-color: #ca8a04 !important;
     color: #ffffff !important;
 }
@@ -417,7 +417,6 @@ if st.session_state.show_exact_result_view:
         with col_b2:
             if st.button("💾 この結果を保存", type="primary", use_container_width=True):
                 now_jp = get_japan_now()
-                record_date_str = now_jp.strftime("%Y%m%d")
                 record_time = now_jp.strftime("%Y-%m-%d %H:%M")
                 new_record = {
                     "測定者": st.session_state.get("meas_inspector_input", "担当者"),
@@ -448,95 +447,94 @@ else:
         if not st.session_state.plants or not st.session_state.air_meters:
             st.warning("先に下部のメニューから「プラント」および「メーター」の登録を行ってください。")
         else:
-            with st.form("measurement_form"):
-                site_name = st.text_input("現場名", value=st.session_state.get("meas_site_name_input", "〇〇現場"))
-                project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", "〇〇道路改良工事"))
-                inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", "内藤 祐介"))
-                
-                plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
-                default_index = 0
-                for idx, (k, p) in enumerate(plant_options.items()):
-                    if p.get('id') == st.session_state.active_plant_id:
-                        default_index = idx
-                        break
-                        
-                selected_plant_key = st.selectbox("プラント・配合選択", list(plant_options.keys()), index=default_index, key="measurement_plant_select")
-                plant = plant_options[selected_plant_key]
-                st.session_state.active_plant_id = plant.get('id')
-                
-                meter_options = {f"{m['meter_name']} (校正: {m.get('calibration_date', '未設定')})": m for m in st.session_state.air_meters}
-                meter_default_idx = 0
-                for idx, (k, m_obj) in enumerate(meter_options.items()):
-                    if m_obj.get('meter_name') == default_meter_name:
-                        meter_default_idx = idx
-                        break
-                selected_meter_key = st.selectbox("使用エアメーター選択", list(meter_options.keys()), index=meter_default_idx, key="measurement_meter_select")
-                meter = meter_options[selected_meter_key]
-                
-                st.session_state.meas_container_vol = meter['container_volume']
-                st.session_state.meas_total_mass = meter['total_mass']
-                st.session_state.meas_meter_name = meter['meter_name']
+            site_name = st.text_input("現場名", value=st.session_state.get("meas_site_name_input", "〇〇現場"))
+            project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", "〇〇道路改良工事"))
+            inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", "内藤 祐介"))
+            
+            plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
+            default_index = 0
+            for idx, (k, p) in enumerate(plant_options.items()):
+                if p.get('id') == st.session_state.active_plant_id:
+                    default_index = idx
+                    break
+                    
+            selected_plant_key = st.selectbox("プラント・配合選択", list(plant_options.keys()), index=default_index, key="measurement_plant_select")
+            plant = plant_options[selected_plant_key]
+            st.session_state.active_plant_id = plant.get('id')
+            
+            meter_options = {f"{m['meter_name']} (校正: {m.get('calibration_date', '未設定')})": m for m in st.session_state.air_meters}
+            meter_default_idx = 0
+            for idx, (k, m_obj) in enumerate(meter_options.items()):
+                if m_obj.get('meter_name') == default_meter_name:
+                    meter_default_idx = idx
+                    break
+            selected_meter_key = st.selectbox("使用エアメーター選択", list(meter_options.keys()), index=meter_default_idx, key="measurement_meter_select")
+            meter = meter_options[selected_meter_key]
+            
+            st.session_state.meas_container_vol = meter['container_volume']
+            st.session_state.meas_total_mass = meter['total_mass']
+            st.session_state.meas_meter_name = meter['meter_name']
 
-                col_in1, col_in2 = st.columns(2)
-                with col_in1:
-                    measured_mass_input = st.number_input("容器を含めた測定質量 (g)", value=float(st.session_state.get("meas_measured_mass", 22875)), step=1.0, format="%d", key="meas_mass_input")
-                with col_in2:
-                    measured_air_input = st.number_input("測定空気量 (%)", value=float(st.session_state.get("meas_measured_air", 3.1)), step=0.1, format="%.1f", key="meas_air_input")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                measured_mass_input = st.number_input("容器を含めた測定質量 (g)", value=float(st.session_state.get("meas_measured_mass", 22875)), step=1.0, format="%d", key="meas_mass_input")
+            with col_in2:
+                measured_air_input = st.number_input("測定空気量 (%)", value=float(st.session_state.get("meas_measured_air", 3.1)), step=0.1, format="%.1f", key="meas_air_input")
 
-                st.session_state.meas_measured_mass = measured_mass_input
-                st.session_state.meas_measured_air = measured_air_input
+            st.session_state.meas_measured_mass = measured_mass_input
+            st.session_state.meas_measured_air = measured_air_input
 
-                air_fixed_p = 4.5
-                w_des_p = float(plant['w_design'])
-                c_val_p = float(plant['c'])
-                s_val_p = float(plant['s'])
-                g_val_p = float(plant['g'])
-                
-                mass_1m3_p = w_des_p + c_val_p + s_val_p + g_val_p
-                vol_without_air_p = 1.0 - ((air_fixed_p + c_val_p * 0.001) * 0.01)
-                unit_vol_mass_mix_p = mass_1m3_p / vol_without_air_p if vol_without_air_p > 0 else 0
-                
-                c_vol_p = float(st.session_state.get("meas_container_vol", 7000))
-                t_mass_p = float(st.session_state.get("meas_total_mass", 4250))
-                m_mass_p = float(st.session_state.get("meas_measured_mass", 22875))
-                m_air_p = float(st.session_state.get("meas_measured_air", 3.1))
-                
-                sample_air_p = m_air_p
-                sample_mass_p = m_mass_p - t_mass_p
-                sample_vol_without_air_p = c_vol_p * (1.0 - sample_air_p * 0.01)
-                sample_unit_vol_mass_p = (sample_mass_p / sample_vol_without_air_p) * 1000 if sample_vol_without_air_p > 0 else 0
-                diff_mass_p = unit_vol_mass_mix_p - sample_unit_vol_mass_p
-                water_error_p = diff_mass_p * 0.7
-                estimated_water_p = w_des_p + water_error_p
-                diff_val_p = round(estimated_water_p - w_des_p)
+            air_fixed_p = 4.5
+            w_des_p = float(plant['w_design'])
+            c_val_p = float(plant['c'])
+            s_val_p = float(plant['s'])
+            g_val_p = float(plant['g'])
+            
+            mass_1m3_p = w_des_p + c_val_p + s_val_p + g_val_p
+            vol_without_air_p = 1.0 - ((air_fixed_p + c_val_p * 0.001) * 0.01)
+            unit_vol_mass_mix_p = mass_1m3_p / vol_without_air_p if vol_without_air_p > 0 else 0
+            
+            c_vol_p = float(st.session_state.get("meas_container_vol", 7000))
+            t_mass_p = float(st.session_state.get("meas_total_mass", 4250))
+            m_mass_p = float(st.session_state.get("meas_measured_mass", 22875))
+            m_air_p = float(st.session_state.get("meas_measured_air", 3.1))
+            
+            sample_air_p = m_air_p
+            sample_mass_p = m_mass_p - t_mass_p
+            sample_vol_without_air_p = c_vol_p * (1.0 - sample_air_p * 0.01)
+            sample_unit_vol_mass_p = (sample_mass_p / sample_vol_without_air_p) * 1000 if sample_vol_without_air_p > 0 else 0
+            diff_mass_p = unit_vol_mass_mix_p - sample_unit_vol_mass_p
+            water_error_p = diff_mass_p * 0.7
+            estimated_water_p = w_des_p + water_error_p
+            diff_val_p = round(estimated_water_p - w_des_p)
 
-                preview_html = f"""
-                <div style="background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 10px 0; border: 1px solid #cbd5e1;">
-                    <div style="font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 4px;">📊 簡易計算結果プレビュー</div>
-                    <div style="display: flex; justify-content: space-around; font-size: 14px; font-weight: bold; color: #0f172a;">
-                        <span>推定単位水量: <strong style="color: #2563eb; font-size: 16px;">{int(round(estimated_water_p))}</strong> kg/m³</span>
-                        <span>配合計画水量: <strong>{int(round(w_des_p))}</strong> kg/m³</span>
-                        <span>差分: <strong style="color: {'#dc2626' if diff_val_p > 0 else '#2563eb'};">{diff_val_p:+d}</strong> kg/m³</span>
-                    </div>
+            preview_html = f"""
+            <div style="background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 10px 0; border: 1px solid #cbd5e1;">
+                <div style="font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 4px;">📊 簡易計算結果プレビュー</div>
+                <div style="display: flex; justify-content: space-around; font-size: 14px; font-weight: bold; color: #0f172a;">
+                    <span>推定単位水量: <strong style="color: #2563eb; font-size: 16px;">{int(round(estimated_water_p))}</strong> kg/m³</span>
+                    <span>配合計画水量: <strong>{int(round(w_des_p))}</strong> kg/m³</span>
+                    <span>差分: <strong style="color: {'#dc2626' if diff_val_p > 0 else '#2563eb'};">{diff_val_p:+d}</strong> kg/m³</span>
                 </div>
-                """
-                st.markdown(preview_html, unsafe_allow_html=True)
+            </div>
+            """
+            st.markdown(preview_html, unsafe_allow_html=True)
 
-                submitted = st.form_submit_button("🌟 単位水量推定結果", type="primary", use_container_width=True)
-                if submitted:
-                    st.session_state.meas_site_name_input = site_name
-                    st.session_state.meas_project_name_input = project_name
-                    st.session_state.meas_inspector_input = inspector_name
-                    st.session_state.active_plant_id = plant.get('id', 1)
-                    
-                    # 端末設定を永続保存
-                    save_device_settings({
-                        "inspector_name": inspector_name,
-                        "active_plant_id": plant.get('id', 1),
-                        "meter_name": meter.get('meter_name', '')
-                    })
-                    
-                    st.session_state.show_exact_result_view = True
+            if st.button("🌟 単位水量推定結果", type="primary", use_container_width=True):
+                st.session_state.meas_site_name_input = site_name
+                st.session_state.meas_project_name_input = project_name
+                st.session_state.meas_inspector_input = inspector_name
+                st.session_state.active_plant_id = plant.get('id', 1)
+                
+                # 端末設定を永続保存
+                save_device_settings({
+                    "inspector_name": inspector_name,
+                    "active_plant_id": plant.get('id', 1),
+                    "meter_name": meter.get('meter_name', '')
+                })
+                
+                st.session_state.show_exact_result_view = True
+                st.rerun()
 
     elif active_tab == "プラント":
         st.header("プラント・配合マスタ登録および一覧")
@@ -668,7 +666,7 @@ else:
                         📌 No.{idx+1} ｜ {hist['日時']} | {hist['現場名']}
                     </div>
                     <div style="color: #93c5fd; font-size: 13px; margin-bottom: 4px;">
-                        工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist['推定単位水量(kg/m3)']}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
+                        工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist['推定単位水量']}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -683,7 +681,7 @@ else:
                         st.write(f"- **プラント・配合**: {hist['プラント']} ({hist['配合']})")
                         st.write(f"- **使用エアメーター**: {meter_str}")
                         st.write(f"- **設計単位水量**: {hist['設計単位水量']} kg/m³")
-                        st.write(f"- **推定単位水量**: {hist['推定単位水量(kg/m3)']} kg/m³")
+                        st.write(f"- **推定単位水量**: {hist['推定単位水量']} kg/m³")
                         st.write(f"- **誤差**: {err_val:+d} kg/m³")
                         st.write(f"- **測定空気量**: {hist['測定空気量(%)']}%")
                     with col_det2:
