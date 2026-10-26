@@ -206,7 +206,6 @@ if active_tab == "測定":
 elif active_tab == "プラント":
     st.header("プラント・配合マスタ登録（自由入力）")
     
-    # フォーム（st.form）を廃止し、通常の入力＆ボタンにすることでEnterによる勝手な登録を防ぐ
     p_name = st.text_input("プラント名", value="A工場", key="reg_p_name")
     
     col_p1, col_p2 = st.columns(2)
@@ -248,8 +247,30 @@ elif active_tab == "プラント":
         save_master()
         st.success(f"配合「{m_name} ({p_name})」を登録しました！")
         st.rerun()
-            
+
     if st.session_state.plants:
+        st.markdown("---")
+        ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{p['w_design']}kg)": p for p in st.session_state.plants}
+        selected_ref_key = st.selectbox("今回の測定に反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
+        ref_plant = ref_options[selected_ref_key]
+        
+        if st.button("選択した配合を今回の測定に反映する", type="primary"):
+            st.session_state.active_plant_id = ref_plant.get('id')
+            st.session_state.current_tab = "測定"
+            components.html("""
+                <script>
+                    window.parent.scrollTo({top: 0, behavior: 'instant'});
+                    window.scrollTo({top: 0, behavior: 'instant'});
+                </script>
+            """, height=0)
+            st.rerun()
+            
+        if st.button("プラント登録をすべてリセット"):
+            st.session_state.plants = []
+            save_master()
+            st.rerun()
+
+        # 登録済み配合の管理（修正・削除）を一番下に配置
         st.markdown("---")
         st.subheader("登録済み配合の管理（修正・削除）")
         
@@ -299,27 +320,6 @@ elif active_tab == "プラント":
                     save_master()
                     st.warning("プラントを削除しました。")
                     st.rerun()
-                    
-        st.markdown("---")
-        ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{p['w_design']}kg)": p for p in st.session_state.plants}
-        selected_ref_key = st.selectbox("今回の測定に反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
-        ref_plant = ref_options[selected_ref_key]
-        
-        if st.button("選択した配合を今回の測定に反映する", type="primary"):
-            st.session_state.active_plant_id = ref_plant.get('id')
-            st.session_state.current_tab = "測定"
-            components.html("""
-                <script>
-                    window.parent.scrollTo({top: 0, behavior: 'instant'});
-                    window.parent.scrollTo({top: 0, behavior: 'instant'});
-                </script>
-            """, height=0)
-            st.rerun()
-            
-        if st.button("プラント登録をすべてリセット"):
-            st.session_state.plants = []
-            save_master()
-            st.rerun()
 
 elif active_tab == "メーター":
     st.header("エアメーター情報登録")
@@ -443,7 +443,7 @@ if selected_tab != active_tab:
         <script>
             function scrollToTop() {
                 window.parent.scrollTo({top: 0, behavior: 'instant'});
-                window.parent.scrollTo({top: 0, behavior: 'instant'});
+                window.scrollTo({top: 0, behavior: 'instant'});
                 const docEl = window.parent.document.documentElement;
                 if (docEl) docEl.scrollTop = 0;
                 const body = window.parent.document.body;
