@@ -25,10 +25,6 @@ label, .stSelectbox label, .stTextInput label, .stNumberInput label {
     font-weight: bold !important;
     color: #f1f5f9 !important;
 }
-button[data-baseweb="tab"] {
-    font-size: 16px !important;
-    font-weight: bold !important;
-}
 div[data-testid="stExpander"] details {
     border: 2px solid #3b82f6;
     border-radius: 12px;
@@ -103,6 +99,9 @@ if "history" not in st.session_state:
 if "active_plant_id" not in st.session_state:
     st.session_state.active_plant_id = 1
 
+if "current_tab" not in st.session_state:
+    st.session_state.current_tab = "測定"
+
 def save_master():
     data = {
         "plants": st.session_state.plants,
@@ -119,17 +118,13 @@ def save_history_store():
 st.title("生コン単位水量推定試験")
 st.markdown("##### 土木研究所法〔無注水法〕")
 
-# タブ構成
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["測定", "プラント", "メーター", "履歴", "データ管理"])
+# 選択されているタブの内容を上部に表示
+active_tab = st.session_state.current_tab
 
-# ==========================================
-# Tab 1: 現場測定（チェックリスト削除版）
-# ==========================================
-with tab1:
+if active_tab == "測定":
     st.header("現場測定 & 記録入力")
-    
     if not st.session_state.plants or not st.session_state.air_meters:
-        st.warning("先に「プラント」および「メーター」タブで事前登録を行ってください。（または「データ管理」タブから設定ファイルを読み込んでください）")
+        st.warning("先に下部のメニューから「プラント」および「メーター」の登録を行ってください。")
     else:
         site_name = st.text_input("現場名", value="〇〇現場")
         project_name = st.text_input("工事件名", value="〇〇道路改良工事")
@@ -187,6 +182,9 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
 
+        # 算出結果と保存ボタンの間隔を少し開ける
+        st.markdown("<br><br>", unsafe_allow_html=True)
+
         if st.button("本日の測定結果を一括保存", type="primary", use_container_width=True):
             record_date_str = datetime.now().strftime("%Y%m%d")
             record_time = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -204,12 +202,9 @@ with tab1:
             }
             st.session_state.history.append(new_record)
             save_history_store()
-            st.success("保存しました！再起動しても「履歴」タブや「データ管理」からいつでも確認できます。")
+            st.success("保存しました！「履歴」タブからいつでも確認できます。")
 
-# ==========================================
-# Tab 2: プラント・配合登録
-# ==========================================
-with tab2:
+elif active_tab == "プラント":
     st.header("プラント・配合マスタ登録（自由入力）")
     with st.form("plant_reg"):
         p_name = st.text_input("プラント名", value="A工場")
@@ -265,17 +260,15 @@ with tab2:
         
         if st.button("この配合を今回の測定に反映する", type="primary"):
             st.session_state.active_plant_id = ref_plant.get('id')
-            st.success(f"「{ref_plant['plant_name']} : {ref_plant['mix_name']}」を今回の測定に反映しました！上部の「測定」タブに切り替えてください。")
+            st.session_state.current_tab = "測定"
+            st.rerun()
             
         if st.button("プラント登録をリセット"):
             st.session_state.plants = []
             save_master()
             st.rerun()
 
-# ==========================================
-# Tab 3: エアメーター登録
-# ==========================================
-with tab3:
+elif active_tab == "メーター":
     st.header("エアメーター情報登録")
     with st.form("meter_reg"):
         m_name = st.text_input("エアメーター識別名", value="AM-01")
@@ -300,10 +293,7 @@ with tab3:
             save_master()
             st.rerun()
 
-# ==========================================
-# Tab 4: 履歴確認
-# ==========================================
-with tab4:
+elif active_tab == "履歴":
     st.header("保存済み測定履歴")
     if st.session_state.history:
         for idx, hist in enumerate(st.session_state.history):
@@ -329,10 +319,7 @@ with tab4:
     else:
         st.info("保存された履歴はありません。")
 
-# ==========================================
-# Tab 5: データ管理
-# ==========================================
-with tab5:
+elif active_tab == "データ管理":
     st.header("設定データ・測定履歴の保存と読み込み")
     st.markdown("登録したプラント情報や測定履歴データをファイルとして保存したり、復元することができます。")
     
@@ -388,3 +375,15 @@ with tab5:
                 st.error("ファイルの形式が正しくありません。")
         except Exception as e:
             st.error(f"読み込みに失敗しました: {e}")
+
+# ==========================================
+# 【重要】ナビゲーションメニューを一番下に配置
+# ==========================================
+st.markdown("---")
+st.markdown("### 📌 メニュー切り替え")
+tabs = ["測定", "プラント", "メーター", "履歴", "データ管理"]
+selected_tab = st.radio("画面移動", tabs, index=tabs.index(active_tab), horizontal=True, label_visibility="collapsed")
+
+if selected_tab != active_tab:
+    st.session_state.current_tab = selected_tab
+    st.rerun()
