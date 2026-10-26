@@ -142,6 +142,17 @@ div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] label {
     color: #ffffff !important;
 }
 </style>
+<script>
+    function hideStreamlitElements() {
+        try {
+            const doc = window.parent.document;
+            const els = doc.querySelectorAll('header[data-testid="stHeader"], footer, .stAppDeployButton, [data-testid="stStatusWidget'], #MainMenu, div[class*="viewerBadge"], [data-testid="stToolbar"]');
+            els.forEach(el => el.remove());
+        } catch(e) {}
+    }
+    setInterval(hideStreamlitElements, 200);
+</script>
+
 """, unsafe_allow_html=True)
 
 MASTER_FILE = "master_settings.json"
