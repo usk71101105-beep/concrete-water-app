@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# カスタムCSS：黄色のボタンの文字を白に設定
+# カスタムCSS：黄色のボタンの文字およびエクスパンダーの文字を白に設定
 st.markdown("""
 <style>
 /* 全体の背景とレイアウトを画像風のグレーに調整 */
@@ -41,14 +41,17 @@ div[data-testid="stExpander"] details {
     border: 2px solid #3b82f6;
     border-radius: 12px;
     background-color: #1e293b;
-    margin-top: 20px;
-    margin-bottom: 10px;
+    margin-top: 40px;
+    margin-bottom: 30px;
 }
 div[data-testid="stExpander"] summary {
     font-size: 18px !important;
     font-weight: bold !important;
     color: #ffffff !important;
     padding: 12px !important;
+}
+div[data-testid="stExpander"] summary span {
+    color: #ffffff !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -294,7 +297,8 @@ if st.session_state.show_exact_result_view:
     </html>
     """, height=490)
 
-    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    # 戻るボタンと保存ボタンをさらに下へ離す
+    st.markdown("<br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     with st.expander("🛠️ 操作パネル（戻る・結果保存）"):
         col_b1, col_b2 = st.columns(2)
         with col_b1:
