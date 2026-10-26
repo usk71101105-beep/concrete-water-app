@@ -335,7 +335,7 @@ if "history" not in st.session_state:
         st.session_state.history = []
 
 if "active_plant_id" not in st.session_state:
-    st.session_state.active_plant_id = 1
+    st.session_state.active_plant_id = default_plant_id
 
 if "current_tab" not in st.session_state:
     st.session_state.current_tab = "測定"
@@ -358,7 +358,7 @@ def save_history_store():
 active_tab = st.session_state.current_tab
 
 if st.session_state.show_exact_result_view:
-    plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
+    plant_options = {f"[{p.get('id', idx)}]{p['plant_name']} : {p['mix_name']}": p for idx, p in enumerate(st.session_state.plants)}
     plant = plant_options.get(list(plant_options.keys())[0])
     for p in st.session_state.plants:
         if p.get('id') == st.session_state.active_plant_id:
@@ -590,7 +590,7 @@ else:
             st.session_state.meas_project_name_input = project_name
             st.session_state.meas_inspector_input = inspector_name
             
-            plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
+            plant_options = {f"[{p.get('id', idx)}]{p['plant_name']} : {p['mix_name']}": p for idx, p in enumerate(st.session_state.plants)}
             default_index = 0
             for idx, (k, p) in enumerate(plant_options.items()):
                 if p.get('id') == st.session_state.active_plant_id:
