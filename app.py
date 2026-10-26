@@ -11,17 +11,14 @@ st.set_page_config(
     layout="centered"
 )
 
-# 日本時間の現在時刻を取得する関数
 def get_japan_now():
     return datetime.now(ZoneInfo("Asia/Tokyo"))
 
 def get_japan_today():
     return get_japan_now().date()
 
-# カスタムCSS：すべてのテキストやボタン、エクスパンダーの文字を確実に白色に設定
 st.markdown("""
 <style>
-/* 全体の背景とレイアウトを画像風のグレーに調整 */
 .stApp {
     background-color: #b0b0b0 !important;
 }
@@ -31,7 +28,6 @@ h1 {
     color: #000000 !important;
     margin-bottom: 0px !important;
 }
-/* 土木研究所法の見出しを中央寄せ・白文字に調整 */
 .sub-title-center {
     text-align: center !important;
     color: #ffffff !important;
@@ -43,7 +39,6 @@ h1 {
 h3, p, label {
     color: #000000 !important;
 }
-/* 黄色のカスタムボタンおよびすべてのStreamlitボタン内の文字を白に強制 */
 .yellow-btn button, .stButton button {
     background-color: #eab308 !important;
     color: #ffffff !important;
@@ -57,7 +52,6 @@ h3, p, label {
     background-color: #ca8a04 !important;
     color: #ffffff !important;
 }
-/* エクスパンダー全体のデザインと中の文字をすべて白に強制 */
 div[data-testid="stExpander"] details {
     border: 2px solid #3b82f6 !important;
     border-radius: 12px !important;
@@ -83,11 +77,9 @@ div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] label {
 </style>
 """, unsafe_allow_html=True)
 
-# --- 永続化ファイルパス ---
 MASTER_FILE = "master_settings.json"
 HISTORY_FILE = "history_store.json"
 
-# --- セッション・ローカルストレージ初期化 ---
 if "plants" not in st.session_state:
     if os.path.exists(MASTER_FILE):
         try:
@@ -158,7 +150,7 @@ def save_history_store():
 
 active_tab = st.session_state.current_tab
 
-# --- 画像完全一致の結果画面（ワンタップ表示・中央寄せ＆グリッド整列対応） ---
+# --- 画像完全一致の結果画面（中央寄せ・中央付近の適度な間隔調整対応） ---
 if st.session_state.show_exact_result_view:
     plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
     plant = plant_options.get(list(plant_options.keys())[0])
@@ -229,6 +221,7 @@ if st.session_state.show_exact_result_view:
             margin-bottom: 2px;
             padding-left: 2px;
         }}
+        /* 白枠：中央寄せにしつつ、要素間は適度な間隔（ギャップ）を空ける仕様に変更 */
         .white-box {{
             background-color: #ffffff;
             border-radius: 2px;
@@ -238,8 +231,9 @@ if st.session_state.show_exact_result_view:
             font-weight: bold;
             color: #000000;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
+            gap: 20px;
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
         }}
         /* 結果部分：グリッドで項目・数値・単位の列を完全に揃えつつ中央寄りに配置 */
