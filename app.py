@@ -89,16 +89,16 @@ div[data-testid="stFileUploader"] button * {
 }
 div[data-testid="stExpander"] details {
     border: 2px solid #3b82f6 !important;
-    border-radius: 12px !important;
+    border-radius: 8px !important;
     background-color: #1e293b !important;
-    margin-top: 20px !important;
-    margin-bottom: 20px !important;
+    margin-top: 2px !important;
+    margin-bottom: 25px !important;
 }
 div[data-testid="stExpander"] summary {
-    font-size: 16px !important;
+    font-size: 15px !important;
     font-weight: bold !important;
     color: #ffffff !important;
-    padding: 10px !important;
+    padding: 8px 12px !important;
     background-color: #1e293b !important;
 }
 div[data-testid="stExpander"] summary * {
@@ -623,15 +623,19 @@ else:
         st.header("保存済み測定履歴")
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
+                # 1つのペアごとに枠（カード）で囲み、タイトルバーと詳細展開を一体化・密着させる
                 st.markdown(f"""
-                <div style="background-color: #1e293b; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #3b82f6;">
-                    <div style="color: #ffffff; font-weight: bold; font-size: 15px; margin-bottom: 4px;">
-                        {hist['日時']} | {hist['現場名']} ({hist['工事件名']}) [推定水量: {hist['推定単位水量(kg/m3)']}kg/m3]
+                <div style="background-color: #0f172a; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; border: 2px solid #3b82f6;">
+                    <div style="color: #ffffff; font-weight: bold; font-size: 15px; margin-bottom: 2px;">
+                        📌 No.{idx+1} ｜ {hist['日時']} | {hist['現場名']}
+                    </div>
+                    <div style="color: #93c5fd; font-size: 13px; margin-bottom: 4px;">
+                        工事件名: {hist['工事件名']} ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist['推定単位水量(kg/m3)']}</strong> kg/m³
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                with st.expander(f"📋 詳細情報を見る (No.{idx+1})", expanded=False):
+                with st.expander(f"📋 上記の結果詳細を見る (No.{idx+1})", expanded=False):
                     col_det1, col_det2 = st.columns([7, 3])
                     with col_det1:
                         st.write(f"- **日付**: {hist['日付']}")
@@ -671,7 +675,7 @@ else:
                 label="履歴CSVダウンロード",
                 data=csv_data,
                 file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/csv"
+                mime="text/css" if False else "text/csv"
             )
             if st.button("履歴をすべてクリア"):
                 st.session_state.history = []
