@@ -358,7 +358,7 @@ def save_history_store():
 active_tab = st.session_state.current_tab
 
 if st.session_state.show_exact_result_view:
-            plant_options = {f"[{i + 1}]{p['plant_name']} : {p['mix_name']}": p for i, p in enumerate(st.session_state.plants)}
+    plant_options = {f"[{i + 1}]{p['plant_name']} : {p['mix_name']}": p for i, p in enumerate(st.session_state.plants)}
     plant = plant_options.get(list(plant_options.keys())[0])
     for p in st.session_state.plants:
         if p.get('id') == st.session_state.active_plant_id:
