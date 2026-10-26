@@ -119,11 +119,11 @@ def save_history_store():
 st.title("生コン単位水量推定試験")
 st.markdown("##### 土木研究所法〔無注水法〕")
 
-# タブ構成（写真関連を省いたシンプルな構成）
+# タブ構成
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["測定", "プラント", "メーター", "履歴", "データ管理"])
 
 # ==========================================
-# Tab 1: 現場測定 ＆ チェックリスト
+# Tab 1: 現場測定（チェックリスト削除版）
 # ==========================================
 with tab1:
     st.header("現場測定 & 記録入力")
@@ -187,23 +187,6 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
 
-        st.subheader("記録忘れ防止チェックリスト")
-        c1, c2 = st.columns(2)
-        with c1:
-            chk_sample = st.checkbox("試料採取はOKか")
-            chk_temp = st.checkbox("温度測定はOKか")
-            chk_chloride = st.checkbox("塩分測定はOKか")
-            chk_slump = st.checkbox("スランプ・空気量はOKか")
-        with c2:
-            chk_mass = st.checkbox("容器質量・容積確認OKか")
-            chk_blackboard = st.checkbox("黒板記載内容OKか")
-            chk_site = st.checkbox("現場風景の確認OKか")
-            chk_clean = st.checkbox("器具の清掃完了か")
-            
-        all_checked = all([chk_sample, chk_temp, chk_chloride, chk_slump, chk_mass, chk_blackboard, chk_site, chk_clean])
-        if not all_checked:
-            st.warning("チェックリストに未完了の項目があります。")
-
         if st.button("本日の測定結果を一括保存", type="primary", use_container_width=True):
             record_date_str = datetime.now().strftime("%Y%m%d")
             record_time = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -217,8 +200,7 @@ with tab1:
                 "配合": plant['mix_name'],
                 "設計単位水量": plant['w_design'],
                 "推定単位水量(kg/m3)": round(estimated_water, 1),
-                "測定空気量(%)": measured_air,
-                "チェック状態": "完了" if all_checked else "未完了"
+                "測定空気量(%)": measured_air
             }
             st.session_state.history.append(new_record)
             save_history_store()
@@ -331,7 +313,6 @@ with tab4:
                 st.write(f"- **生コン種類**: {hist['種類']} / プラント: {hist['プラント']} ({hist['配合']})")
                 st.write(f"- 設計単位水量: {hist['設計単位水量']} kg/m³")
                 st.write(f"- 測定空気量: {hist['測定空気量(%)']}%")
-                st.write(f"- チェックリスト: {hist['チェック状態']}")
                 
         df_history_export = pd.DataFrame(st.session_state.history)
         csv_data = df_history_export.to_csv(index=False).encode('utf-8-sig')
