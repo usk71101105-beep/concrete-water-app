@@ -122,7 +122,6 @@ st.markdown("##### 土木研究所法〔無注水法〕")
 active_tab = st.session_state.current_tab
 
 if active_tab == "測定":
-    st.header("現場測定 & 記録入力")
     if not st.session_state.plants or not st.session_state.air_meters:
         st.warning("先に下部のメニューから「プラント」および「メーター」の登録を行ってください。")
     else:
@@ -182,7 +181,6 @@ if active_tab == "測定":
         </div>
         """, unsafe_allow_html=True)
 
-        # 算出結果と保存ボタンの間隔を少し開ける
         st.markdown("<br><br>", unsafe_allow_html=True)
 
         if st.button("本日の測定結果を一括保存", type="primary", use_container_width=True):
@@ -377,7 +375,7 @@ elif active_tab == "データ管理":
             st.error(f"読み込みに失敗しました: {e}")
 
 # ==========================================
-# 【重要】ナビゲーションメニューを一番下に配置
+# ナビゲーションメニューを一番下に配置 ＆ スクロールトップ処理
 # ==========================================
 st.markdown("---")
 st.markdown("### 📌 メニュー切り替え")
@@ -386,4 +384,9 @@ selected_tab = st.radio("画面移動", tabs, index=tabs.index(active_tab), hori
 
 if selected_tab != active_tab:
     st.session_state.current_tab = selected_tab
+    st.markdown("""
+        <script>
+            window.scrollTo({top: 0, behavior: 'instant'});
+        </script>
+    """, unsafe_allow_html=True)
     st.rerun()
