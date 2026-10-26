@@ -393,7 +393,8 @@ if st.session_state.show_exact_result_view:
                     "設計単位水量": int(round(w_des)),
                     "推定単位水量(kg/m3)": int(round(estimated_water)),
                     "測定空気量(%)": measured_air,
-                    "誤差": diff_val
+                    "誤差": diff_val,
+                    "エアメーター": st.session_state.get("meas_meter_name", "C13-WP776185XT")
                 }
                 st.session_state.history.append(new_record)
                 save_history_store()
@@ -624,8 +625,9 @@ else:
         st.header("保存済み測定履歴")
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
-                # 誤差データの取得（過去データにない場合は計算で補う）
+                # 誤差データの取得
                 err_val = hist.get("誤差", hist["推定単位水量(kg/m3)"] - hist["設計単位水量"])
+                meter_str = hist.get("エアメーター", "C13-WP776185XT")
                 
                 st.markdown(f"""
                 <div style="background-color: #0f172a; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; border: 2px solid #3b82f6;">
@@ -641,11 +643,11 @@ else:
                 with st.expander(f"📋 上記の結果詳細を見る (No.{idx+1})", expanded=False):
                     col_det1, col_det2 = st.columns([7, 3])
                     with col_det1:
-                        st.write(f"- **日付**: {hist['日付']}")
                         st.write(f"- **日時**: {hist['日時']}")
                         st.write(f"- **現場名**: {hist['現場名']}")
                         st.write(f"- **工事件名**: {hist['工事件名']}")
                         st.write(f"- **プラント・配合**: {hist['プラント']} ({hist['配合']})")
+                        st.write(f"- **使用エアメーター**: {meter_str}")
                         st.write(f"- **設計単位水量**: {hist['設計単位水量']} kg/m³")
                         st.write(f"- **推定単位水量**: {hist['推定単位水量(kg/m3)']} kg/m³")
                         st.write(f"- **誤差**: {err_val:+d} kg/m³")
