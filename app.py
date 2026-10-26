@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# カスタムCSS：画像と完全に一致するデザイン、黄色のボタン、コンパクト表示
+# カスタムCSS：黄色のボタンの文字を白に設定
 st.markdown("""
 <style>
 /* 全体の背景とレイアウトを画像風のグレーに調整 */
@@ -26,16 +26,16 @@ h1 {
 h3, p, label {
     color: #000000 !important;
 }
-/* 黄色のカスタムボタン用クラス */
+/* 黄色のカスタムボタン（文字を白に指定） */
 .yellow-btn button {
     background-color: #eab308 !important;
-    color: #000000 !important;
+    color: #ffffff !important;
     font-weight: bold !important;
     border: none !important;
 }
 .yellow-btn button:hover {
     background-color: #ca8a04 !important;
-    color: #000000 !important;
+    color: #ffffff !important;
 }
 div[data-testid="stExpander"] details {
     border: 2px solid #3b82f6;
@@ -292,31 +292,33 @@ if st.session_state.show_exact_result_view:
         </div>
     </body>
     </html>
-    """, height=520)
+    """, height=490)
 
-    col_b1, col_b2 = st.columns(2)
-    with col_b1:
-        if st.button("← 入力画面に戻る", use_container_width=True):
-            st.session_state.show_exact_result_view = False
-            st.rerun()
-    with col_b2:
-        if st.button("💾 この結果を保存", type="primary", use_container_width=True):
-            record_date_str = datetime.now().strftime("%Y%m%d")
-            record_time = datetime.now().strftime("%Y-%m-%d %H:%M")
-            new_record = {
-                "日付": record_date_str,
-                "日時": record_time,
-                "現場名": st.session_state.get("meas_site_name", "〇〇現場"),
-                "工事件名": st.session_state.get("meas_project_name", "〇〇工事"),
-                "プラント": plant['plant_name'],
-                "配合": plant['mix_name'],
-                "設計単位水量": plant['w_design'],
-                "推定単位水量(kg/m3)": round(estimated_water, 1),
-                "測定空気量(%)": measured_air
-            }
-            st.session_state.history.append(new_record)
-            save_history_store()
-            st.success("保存しました！")
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    with st.expander("🛠️ 操作パネル（戻る・結果保存）"):
+        col_b1, col_b2 = st.columns(2)
+        with col_b1:
+            if st.button("← 入力画面に戻る", use_container_width=True):
+                st.session_state.show_exact_result_view = False
+                st.rerun()
+        with col_b2:
+            if st.button("💾 この結果を保存", type="primary", use_container_width=True):
+                record_date_str = datetime.now().strftime("%Y%m%d")
+                record_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                new_record = {
+                    "日付": record_date_str,
+                    "日時": record_time,
+                    "現場名": st.session_state.get("meas_site_name", "〇〇現場"),
+                    "工事件名": st.session_state.get("meas_project_name", "〇〇工事"),
+                    "プラント": plant['plant_name'],
+                    "配合": plant['mix_name'],
+                    "設計単位水量": plant['w_design'],
+                    "推定単位水量(kg/m3)": round(estimated_water, 1),
+                    "測定空気量(%)": measured_air
+                }
+                st.session_state.history.append(new_record)
+                save_history_store()
+                st.success("保存しました！")
 
 else:
     # --- 通常の入力・操作画面 ---
@@ -597,7 +599,7 @@ else:
                 st.error(f"読み込みに失敗しました: {e}")
 
     # ==========================================
-    # メニュー切り替えの直前に「単位水量推定結果」ボタンを配置（黄色）
+    # メニュー切り替えの直前に「単位水量推定結果」ボタンを配置（黄色・文字白）
     # ==========================================
     if active_tab == "測定" and st.session_state.plants and st.session_state.air_meters:
         st.markdown("<br>", unsafe_allow_html=True)
