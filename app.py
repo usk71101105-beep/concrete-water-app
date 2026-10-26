@@ -616,7 +616,7 @@ else:
 
             col_in1, col_in2 = st.columns(2)
             with col_in1:
-                measured_mass_input = st.number_input("容器を含めた測定質量 (g)", value=float(st.session_state.get("meas_measured_mass", 22875)), step=1.0, format="%d", key="meas_mass_input")
+                measured_mass_input = st.number_input("容器を含めた測定質量 (g)", value=float(st.session_state.get("meas_measured_mass", 22875)), step=50.0, format="%d", key="meas_mass_input")
             with col_in2:
                 measured_air_input = st.number_input("測定空気量 (%)", value=float(st.session_state.get("meas_measured_air", 3.1)), step=0.1, format="%.1f", key="meas_air_input")
 
@@ -651,9 +651,9 @@ else:
             <div style="background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 10px 0; border: 1px solid #cbd5e1;">
                 <div style="font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 4px;">📊 簡易計算結果プレビュー</div>
                 <div style="display: flex; justify-content: space-around; font-size: 14px; font-weight: bold; color: #0f172a;">
-                    <span>推定単位水量: <strong style="color: #2563eb; font-size: 16px;">{{int(round(estimated_water_p))}}</strong> kg/m³</span>
-                    <span>配合計画水量: <strong>{{int(round(w_des_p))}}</strong> kg/m³</span>
-                    <span>差分: <strong style="color: {("#dc2626" if diff_val_p > 0 else "#2563eb")};">{{diff_val_p:+d}}</strong> kg/m³</span>
+                    <span>推定単位水量: <strong style="color: #2563eb; font-size: 16px;">{int(round(estimated_water_p))}</strong> kg/m³</span>
+                    <span>配合計画水量: <strong>{int(round(w_des_p))}</strong> kg/m³</span>
+                    <span>差分: <strong style="color: {("#dc2626" if diff_val_p > 0 else "#2563eb")};">{diff_val_p:+d}</strong> kg/m³</span>
                 </div>
             </div>
             """
