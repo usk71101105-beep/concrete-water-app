@@ -692,16 +692,17 @@ else:
     elif active_tab == "データ管理":
         st.header("設定データ・測定履歴の保存と読み込み")
 
-    # 端末・ユーザープロファイル設定
-    with st.expander("📱 端末・ユーザーごとの独立プロファイル設定（PCとスマホの履歴分離）", expanded=False):
-        st.markdown("この端末専用のプロファイル名を設定することで、他の端末（PCとスマホ等）の履歴と完全に分離して保存・閲覧できます。")
-        profile_input = st.text_input("現在の端末プロファイル名", value=st.session_state.device_user_id, key="profile_input_field")
-        if st.button("プロファイル名を適用して切り替える", use_container_width=True):
-            st.session_state.device_user_id = profile_input.strip() if profile_input.strip() else "default_user"
-            st.query_params["user"] = st.session_state.device_user_id
-            st.success(f"プロファイル「{st.session_state.device_user_id}」に切り替えました！")
-            st.rerun()
-        st.info(f"現在適用中のプロファイル: **{st.session_state.device_user_id}** (保存先ファイル: `history_store_{st.session_state.device_user_id}.json`)")
+        # 端末・ユーザープロファイル設定
+        with st.expander("📱 端末・ユーザーごとの独立プロファイル設定（PCとスマホの履歴分離）", expanded=False):
+            st.markdown("この端末専用のプロファイル名を設定することで、他の端末（PCとスマホ等）の履歴と完全に分離して保存・閲覧できます。")
+            profile_input = st.text_input("現在の端末プロファイル名", value=st.session_state.device_user_id, key="profile_input_field")
+            if st.button("プロファイル名を適用して切り替える", use_container_width=True):
+                st.session_state.device_user_id = profile_input.strip() if profile_input.strip() else "default_user"
+                st.query_params["user"] = st.session_state.device_user_id
+                st.success(f"プロファイル「{st.session_state.device_user_id}」に切り替えました！")
+                st.rerun()
+            st.info(f"現在適用中のプロファイル: **{st.session_state.device_user_id}** (保存先ファイル: `history_store_{st.session_state.device_user_id}.json`)")
+
         st.markdown("登録したプラント情報や測定履歴データをファイルとして保存したり、復元することができます。")
         st.subheader("① プラント・メーター設定の保存")
         custom_master_name = st.text_input("保存するファイル名 (拡張子.jsonは不要)", value=f"concrete_master_settings_{get_japan_now().strftime('%Y%m%d')}")
