@@ -155,6 +155,15 @@ iframe[src*="streamlit"] {
     display: none !important;
 }
 
+
+/* アイコンやバッジが万が一表示されても、クリック（タップ）に反応しないようにする（すり抜ける） */
+div[class*="viewerBadge"],
+.styles_viewerBadge__1yG5_,
+div[style*="position: fixed"],
+div[style*="position:fixed"] {
+    pointer-events: none !important;
+}
+
 </style>
 
 
