@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import json
+import base64
+import io
+import os
 
 st.set_page_config(
     page_title="生コン単位水量推定試験",
@@ -11,7 +14,6 @@ st.set_page_config(
 # カスタムCSS：老眼の方向けに文字を大きくしつつ、1画面に収まるコンパクトな配置を維持
 st.markdown("""
 <style>
-/* タイトルやヘッダーが途中で変に改行されないようにサイズと折り返しを調整 */
 h1 {
     font-size: 26px !important;
     white-space: nowrap !important;
@@ -20,18 +22,15 @@ h2, h3 {
     font-size: 20px !important;
     white-space: nowrap !important;
 }
-/* ラベルや入力項目の文字を大きく見やすく（老眼対応） */
 label, .stSelectbox label, .stTextInput label, .stNumberInput label {
     font-size: 16px !important;
     font-weight: bold !important;
     color: #f1f5f9 !important;
 }
-/* タブの文字も大きく */
 button[data-baseweb="tab"] {
     font-size: 16px !important;
     font-weight: bold !important;
 }
-/* 「写真の撮影・8項目」ボタン風エクスパンダー */
 div[data-testid="stExpander"] details {
     border: 2px solid #3b82f6;
     border-radius: 12px;
@@ -52,39 +51,71 @@ div[data-testid="stExpander"] summary:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# --- セッション初期化（スマホ内ローカル保持） ---
-if "plants" not in st.session_state:
-    st.session_state.plants = [
-        {
-            "id": 1,
-            "plant_name": "A工場",
-            "mix_name": "24-18-20-N",
-            "nominal_strength": "24",
-            "slump": 18.0,
-            "max_aggregate": 20,
-            "concrete_type": "N (普通)",
-            "w_design": 165.0,
-            "c": 300.0,
-            "s": 780.0,
-            "g": 950.0,
-        }
-    ]
+# --- 永続化ファイルパス ---
+MASTER_FILE = "master_settings.json"
+HISTORY_FILE = "history_store.json"
 
-if "air_meters" not in st.session_state:
-    st.session_state.air_meters = [
-        {
-            "id": 1,
-            "meter_name": "AM-01 (7L型)",
-            "container_volume": 7000.0,
-            "total_mass": 4250.0,
-        }
-    ]
+# --- セッション・ローカルストレージ初期化 ---
+if "plants" not in st.session_state:
+    if os.path.exists(MASTER_FILE):
+        try:
+            with open(MASTER_FILE, "r", encoding="utf-8") as f:
+                m_data = json.load(f)
+                st.session_state.plants = m_data.get("plants", [])
+                st.session_state.air_meters = m_data.get("air_meters", [])
+        except Exception:
+            st.session_state.plants = []
+            st.session_state.air_meters = []
+    if not st.session_state.get("plants"):
+        st.session_state.plants = [
+            {
+                "id": 1,
+                "plant_name": "A工場",
+                "mix_name": "24-18-20-N",
+                "nominal_strength": "24",
+                "slump": 18.0,
+                "max_aggregate": 20,
+                "concrete_type": "N (普通)",
+                "w_design": 165.0,
+                "c": 300.0,
+                "s": 780.0,
+                "g": 950.0,
+            }
+        ]
+    if not st.session_state.get("air_meters"):
+        st.session_state.air_meters = [
+            {
+                "id": 1,
+                "meter_name": "AM-01 (7L型)",
+                "container_volume": 7000.0,
+                "total_mass": 4250.0,
+            }
+        ]
 
 if "history" not in st.session_state:
-    st.session_state.history = []
+    if os.path.exists(HISTORY_FILE):
+        try:
+            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+                st.session_state.history = json.load(f)
+        except Exception:
+            st.session_state.history = []
+    else:
+        st.session_state.history = []
 
 if "active_plant_id" not in st.session_state:
     st.session_state.active_plant_id = 1
+
+def save_master():
+    data = {
+        "plants": st.session_state.plants,
+        "air_meters": st.session_state.air_meters
+    }
+    with open(MASTER_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+def save_history_store():
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(st.session_state.history, f, ensure_ascii=False, indent=4)
 
 # タイトルとサブタイトルの設定
 st.title("生コン単位水量推定試験")
@@ -102,12 +133,11 @@ with tab1:
     if not st.session_state.plants or not st.session_state.air_meters:
         st.warning("先に「プラント」および「メーター」タブで事前登録を行ってください。（または「データ管理」タブから設定ファイルを読み込んでください）")
     else:
-        site_name = st.text_input("現場名", value="〇〇現場 / ○○地区")
-        project_name = st.text_input("工事件名", value="〇〇道路改良工事（その1）")
+        site_name = st.text_input("現場名", value="〇〇現場")
+        project_name = st.text_input("工事件名", value="〇〇道路改良工事")
         
         plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
         
-        # Determine default index based on active_plant_id
         default_index = 0
         for idx, (k, p) in enumerate(plant_options.items()):
             if p.get('id') == st.session_state.active_plant_id:
@@ -125,7 +155,6 @@ with tab1:
         container_vol = meter['container_volume']
         total_mass = meter['total_mass']
 
-        # 2つの測定値入力を横並び（2カラム）に配置
         col_in1, col_in2 = st.columns(2)
         with col_in1:
             measured_mass = st.number_input("容器を含めた測定質量 (g)", value=17500, step=1, format="%d")
@@ -146,11 +175,7 @@ with tab1:
         water_error = diff_mass * 0.7
         estimated_water = plant['w_design'] + water_error
         
-        # ==========================================
-        # 算出結果の大きくわかりやすい表示
-        # ==========================================
         st.subheader("算出結果")
-        
         st.markdown(f"""
         <div style="display: flex; gap: 15px; justify-content: space-around; background-color: #262730; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #4f46e5;">
             <div style="flex: 1;">
@@ -164,10 +189,7 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
 
-        # ==========================================
-        # 写真の撮影・8項目（ボタン風エクスパンダー）
-        # ==========================================
-        captured_photos = {}
+        captured_photos_base64 = {}
         with st.expander("写真の撮影・8項目", expanded=False):
             photo_labels = {
                 "blackboard": "1. 黒板（工事看板・条件）",
@@ -180,11 +202,12 @@ with tab1:
                 "site_scenery": "8. 現場風景"
             }
             for key, label in photo_labels.items():
-                captured_photos[key] = st.camera_input(label)
+                p_file = st.file_uploader(label, type=["jpg", "jpeg", "png"], key=f"photo_{key}")
+                if p_file is not None:
+                    captured_photos_base64[key] = base64.b64encode(p_file.getvalue()).decode('utf-8')
+                else:
+                    captured_photos_base64[key] = None
 
-        # ==========================================
-        # 記録忘れ防止チェックリスト
-        # ==========================================
         st.subheader("記録忘れ防止チェックリスト")
         c1, c2 = st.columns(2)
         with c1:
@@ -199,15 +222,17 @@ with tab1:
             chk_clean = st.checkbox("器具の清掃完了か")
             
         all_checked = all([chk_sample, chk_temp, chk_chloride, chk_slump, chk_mass, chk_blackboard, chk_site, chk_clean])
-        photos_taken_count = sum(1 for p in captured_photos.values() if p is not None)
+        photos_taken_count = sum(1 for p in captured_photos_base64.values() if p is not None)
         
         if not all_checked:
             st.warning("チェックリストに未完了の項目があります。")
         st.info(f"写真撮影状況: {photos_taken_count} / 8枚")
 
         if st.button("本日の測定結果・写真を一括保存", type="primary", use_container_width=True):
+            record_date_str = datetime.now().strftime("%Y%m%d")
             record_time = datetime.now().strftime("%Y-%m-%d %H:%M")
             new_record = {
+                "日付": record_date_str,
                 "日時": record_time,
                 "現場名": site_name,
                 "工事件名": project_name,
@@ -219,10 +244,11 @@ with tab1:
                 "測定空気量(%)": measured_air,
                 "チェック状態": "完了" if all_checked else "未完了",
                 "写真枚数": f"{photos_taken_count}/8枚",
-                "photos_raw": captured_photos
+                "photos_b64": captured_photos_base64
             }
             st.session_state.history.append(new_record)
-            st.success("保存しました！「履歴」タブから確認できます。")
+            save_history_store()
+            st.success("保存しました！再起動しても「履歴」タブや「データ管理」からいつでも確認できます。")
 
 # ==========================================
 # Tab 2: プラント・配合登録
@@ -241,7 +267,6 @@ with tab2:
             
         c_type = st.selectbox("生コンの種類", ["N (普通)", "H (早強)", "M (中庸熱)", "BB (高炉B種)"])
         
-        # 配合の自動生成（例: 24-18-20-N）
         c_code = c_type.split()[0]
         slump_val = int(slump) if slump.is_integer() else slump
         auto_mix_name = f"{n_str}-{slump_val}-{max_agg}-{c_code}"
@@ -269,6 +294,7 @@ with tab2:
                 "s": s_val, 
                 "g": g_val
             })
+            save_master()
             st.success(f"配合「{m_name} ({p_name})」を登録しました！")
             
     if st.session_state.plants:
@@ -276,7 +302,6 @@ with tab2:
         df_plants = pd.DataFrame(st.session_state.plants)[['concrete_type', 'plant_name', 'mix_name', 'w_design', 'c', 's', 'g']]
         st.dataframe(df_plants, use_container_width=True)
         
-        # 登録済み配合のデータ参照および測定への反映セクション
         st.subheader("登録済み配合のデータ確認・測定への反映")
         ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{p['w_design']}kg)": p for p in st.session_state.plants}
         selected_ref_key = st.selectbox("確認・反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
@@ -296,6 +321,7 @@ with tab2:
             
         if st.button("プラント登録をリセット"):
             st.session_state.plants = []
+            save_master()
             st.rerun()
 
 # ==========================================
@@ -315,6 +341,7 @@ with tab3:
                 "container_volume": c_vol, 
                 "total_mass": t_mass
             })
+            save_master()
             st.success(f"エアメーター「{m_name}」を登録しました！")
             
     if st.session_state.air_meters:
@@ -322,6 +349,7 @@ with tab3:
         st.dataframe(pd.DataFrame(st.session_state.air_meters), use_container_width=True)
         if st.button("エアメーター登録をリセット"):
             st.session_state.air_meters = []
+            save_master()
             st.rerun()
 
 # ==========================================
@@ -339,12 +367,13 @@ with tab4:
                 st.write(f"- チェックリスト: {hist['チェック状態']}")
                 st.write(f"- 撮影写真数: {hist['写真枚数']}")
                 
-                photos = hist.get("photos_raw", {})
-                for p_key, p_file in photos.items():
-                    if p_file is not None:
-                        st.image(p_file, caption=f"[{p_key}] {p_file.name}", width=250)
+                photos_b64 = hist.get("photos_b64", {})
+                for p_key, p_val in photos_b64.items():
+                    if p_val is not None:
+                        img_bytes = base64.b64decode(p_val)
+                        st.image(io.BytesIO(img_bytes), caption=f"[{p_key}]", width=250)
                         
-        df_history_export = pd.DataFrame([{k: v for k, v in h.items() if k != "photos_raw"} for h in st.session_state.history])
+        df_history_export = pd.DataFrame([{k: v for k, v in h.items() if k != "photos_b64"} for h in st.session_state.history])
         csv_data = df_history_export.to_csv(index=False).encode('utf-8-sig')
         st.download_button(
             label="履歴CSVダウンロード",
@@ -352,38 +381,73 @@ with tab4:
             file_name=f"concrete_quality_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
             mime="text/csv"
         )
+        if st.button("履歴をすべてクリア"):
+            st.session_state.history = []
+            save_history_store()
+            st.rerun()
     else:
         st.info("保存された履歴はありません。")
 
 # ==========================================
-# Tab 5: データ管理（バックアップ・復元）
+# Tab 5: データ管理（バックアップ・復元 ＆ ファイル保存）
 # ==========================================
 with tab5:
-    st.header("設定データ・マスターの保存と読み込み")
-    st.markdown("登録したプラントやエアメーターの情報をファイルとして保存（バックアップ）したり、別の端末に引き継ぐことができます。")
+    st.header("設定データ・測定履歴の保存と読み込み")
+    st.markdown("登録したプラント情報や、写真を含む測定履歴データをファイルとして保存（バックアップ・端末への保存）したり、復元することができます。")
     
-    backup_data = {
+    # 1. マスター設定のバックアップ
+    master_backup = {
         "plants": st.session_state.plants,
         "air_meters": st.session_state.air_meters
     }
-    json_str = json.dumps(backup_data, ensure_ascii=False, indent=4)
-    
     st.download_button(
-        label="プラント・メーター設定をファイルに保存 (JSON)",
-        data=json_str,
+        label="① プラント・メーター設定をファイルに保存 (JSON)",
+        data=json.dumps(master_backup, ensure_ascii=False, indent=4),
         file_name=f"concrete_master_settings_{datetime.now().strftime('%Y%m%d')}.json",
         mime="application/json"
     )
     
-    st.subheader("保存した設定ファイルの読み込み（復元）")
-    uploaded_file = st.file_uploader("以前保存した設定ファイル (.json) を選択", type=["json"])
+    st.markdown("---")
+    st.subheader("② 測定履歴・写真データの保存（ファイル名：日付_現場名_工事件名）")
+    if st.session_state.history:
+        for i, hist in enumerate(st.session_state.history):
+            h_date = hist.get("日付", datetime.now().strftime("%Y%m%d"))
+            h_site = hist.get("現場名", "現場")
+            h_proj = hist.get("工事件名", "工事")
+            # ファイル名を「日付_現場名_工事件名.json」に整形
+            safe_filename = f"{h_date}_{h_site}_{h_proj}.json".replace("/", "_").replace(" ", "_")
+            
+            single_history_json = json.dumps([hist], ensure_ascii=False, indent=4)
+            st.download_button(
+                label=f"📁 保存: {h_date} / {h_site} ({h_proj})",
+                data=single_history_json,
+                file_name=safe_filename,
+                mime="application/json",
+                key=f"dl_hist_{i}"
+            )
+    else:
+        st.info("保存できる測定履歴がありません。")
+        
+    st.markdown("---")
+    st.subheader("③ 保存したデータの読み込み（復元）")
+    uploaded_file = st.file_uploader("保存したファイル (.json) を選択", type=["json"], key="restore_uploader")
     if uploaded_file is not None:
         try:
-            loaded_data = json.load(uploaded_file)
-            if "plants" in loaded_data and "air_meters" in loaded_data:
-                st.session_state.plants = loaded_data["plants"]
-                st.session_state.air_meters = loaded_data["air_meters"]
-                st.success("設定データを正常に読み込み（復元）しました！「プラント」および「メーター」タブから確認できます。")
+            content = json.load(uploaded_file)
+            # 履歴データ形式かマスター設定形式かを判定
+            if isinstance(content, list):
+                # 履歴データ
+                for rec in content:
+                    if rec not in st.session_state.history:
+                        st.session_state.history.append(rec)
+                save_history_store()
+                st.success("測定履歴データを正常に読み込み（復元）しました！「履歴」タブから確認できます。")
+            elif isinstance(content, dict) and "plants" in content:
+                # マスター設定
+                st.session_state.plants = content["plants"]
+                st.session_state.air_meters = content.get("air_meters", [])
+                save_master()
+                st.success("プラント・メーター設定データを正常に読み込み（復元）しました！")
             else:
                 st.error("ファイルの形式が正しくありません。")
         except Exception as e:
