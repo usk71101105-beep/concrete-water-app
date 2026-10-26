@@ -488,7 +488,6 @@ else:
                     st.session_state.meas_site_name_input = site_name
                     st.session_state.meas_project_name_input = project_name
                     st.session_state.show_exact_result_view = True
-                    st.rerun()
 
     elif active_tab == "プラント":
         st.header("プラント・配合マスタ登録および一覧")
