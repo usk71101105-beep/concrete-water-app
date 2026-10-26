@@ -392,7 +392,8 @@ if st.session_state.show_exact_result_view:
                     "配合": plant['mix_name'],
                     "設計単位水量": int(round(w_des)),
                     "推定単位水量(kg/m3)": int(round(estimated_water)),
-                    "測定空気量(%)": measured_air
+                    "測定空気量(%)": measured_air,
+                    "誤差": diff_val
                 }
                 st.session_state.history.append(new_record)
                 save_history_store()
@@ -623,14 +624,16 @@ else:
         st.header("保存済み測定履歴")
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
-                # 1つのペアごとに枠（カード）で囲み、タイトルバーと詳細展開を一体化・密着させる
+                # 誤差データの取得（過去データにない場合は計算で補う）
+                err_val = hist.get("誤差", hist["推定単位水量(kg/m3)"] - hist["設計単位水量"])
+                
                 st.markdown(f"""
                 <div style="background-color: #0f172a; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; border: 2px solid #3b82f6;">
                     <div style="color: #ffffff; font-weight: bold; font-size: 15px; margin-bottom: 2px;">
                         📌 No.{idx+1} ｜ {hist['日時']} | {hist['現場名']}
                     </div>
                     <div style="color: #93c5fd; font-size: 13px; margin-bottom: 4px;">
-                        工事件名: {hist['工事件名']} ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist['推定単位水量(kg/m3)']}</strong> kg/m³
+                        工事件名: {hist['工事件名']} ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist['推定単位水量(kg/m3)']}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -645,6 +648,7 @@ else:
                         st.write(f"- **プラント・配合**: {hist['プラント']} ({hist['配合']})")
                         st.write(f"- **設計単位水量**: {hist['設計単位水量']} kg/m³")
                         st.write(f"- **推定単位水量**: {hist['推定単位水量(kg/m3)']} kg/m³")
+                        st.write(f"- **誤差**: {err_val:+d} kg/m³")
                         st.write(f"- **測定空気量**: {hist['測定空気量(%)']}%")
                     with col_det2:
                         st.markdown("<div style='font-weight:bold; color:#000000; margin-bottom:5px;'>操作</div>", unsafe_allow_html=True)
@@ -675,7 +679,7 @@ else:
                 label="履歴CSVダウンロード",
                 data=csv_data,
                 file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/css" if False else "text/csv"
+                mime="text/csv"
             )
             if st.button("履歴をすべてクリア"):
                 st.session_state.history = []
