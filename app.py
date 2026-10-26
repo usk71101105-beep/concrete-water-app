@@ -167,6 +167,35 @@ div[style*="position:fixed"] {
 </style>
 
 <script>
+// 画面右下のバッジ領域を完全にカバーする透明なシールド（盾）を挿入してタッチをブロックする
+window.addEventListener('DOMContentLoaded', () => {
+    createShield();
+});
+setInterval(() => {
+    createShield();
+}, 500);
+
+function createShield() {
+    if (!document.getElementById('tap-shield-blocker')) {
+        const shield = document.createElement('div');
+        shield.id = 'tap-shield-blocker';
+        shield.style.position = 'fixed';
+        shield.style.bottom = '0px';
+        shield.style.right = '0px';
+        shield.style.width = '200px';
+        shield.style.height = '70px';
+        shield.style.zIndex = '2147483647';
+        shield.style.pointerEvents = 'auto';
+        shield.style.background = 'transparent';
+        shield.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); });
+        shield.addEventListener('touchstart', (e) => { e.stopPropagation(); e.preventDefault(); });
+        document.body.appendChild(shield);
+    }
+}
+</script>
+
+
+<script>
 // Streamlitのバッジや不要なフローティング要素をDOMから完全に削除するスクリプト
 setInterval(() => {
     const unwanted = document.querySelectorAll('div[class*="viewerBadge"], .styles_viewerBadge__1yG5_, [data-testid="stToolbar"], div[style*="position: fixed"]');
