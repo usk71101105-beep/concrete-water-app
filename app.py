@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# カスタムCSS：画像と完全に一致するデザインおよび全画面スクロールなしのコンパクト表示
+# カスタムCSS：画像と完全に一致するデザイン、黄色のボタン、コンパクト表示
 st.markdown("""
 <style>
 /* 全体の背景とレイアウトを画像風のグレーに調整 */
@@ -24,6 +24,17 @@ h1 {
     margin-bottom: 0px !important;
 }
 h3, p, label {
+    color: #000000 !important;
+}
+/* 黄色のカスタムボタン用クラス */
+.yellow-btn button {
+    background-color: #eab308 !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+    border: none !important;
+}
+.yellow-btn button:hover {
+    background-color: #ca8a04 !important;
     color: #000000 !important;
 }
 div[data-testid="stExpander"] details {
@@ -316,12 +327,6 @@ else:
         if not st.session_state.plants or not st.session_state.air_meters:
             st.warning("先に下部のメニューから「プラント」および「メーター」の登録を行ってください。")
         else:
-            if st.button("🚀 画像と同じ結果画面で表示（ワンタップ）", type="primary", use_container_width=True):
-                st.session_state.show_exact_result_view = True
-                st.rerun()
-                
-            st.markdown("---")
-
             site_name = st.text_input("現場名", value="〇〇現場", key="meas_site_name_input")
             project_name = st.text_input("工事件名", value="〇〇道路改良工事", key="meas_project_name_input")
             
@@ -349,6 +354,37 @@ else:
                 st.session_state.meas_measured_mass = st.number_input("容器を含めた測定質量 (g)", value=22875, step=1, format="%d", key="meas_mass_input")
             with col_in2:
                 st.session_state.meas_measured_air = st.number_input("測定空気量 (%)", value=3.1, step=0.1, format="%.1f", key="meas_air_input")
+
+            # --- 測定質量と空気量の下に小さく結果を表示 ---
+            air_fixed_p = 4.5
+            mass_1m3_p = plant['w_design'] + plant['c'] + plant['s'] + plant['g']
+            vol_without_air_p = 1.0 - ((air_fixed_p + plant['c'] * 0.001) * 0.01)
+            unit_vol_mass_mix_p = mass_1m3_p / vol_without_air_p if vol_without_air_p > 0 else 0
+            
+            c_vol_p = st.session_state.get("meas_container_vol", 7000.0)
+            t_mass_p = st.session_state.get("meas_total_mass", 4250.0)
+            m_mass_p = st.session_state.get("meas_measured_mass", 22875)
+            m_air_p = st.session_state.get("meas_measured_air", 3.1)
+            
+            sample_air_p = m_air_p
+            sample_mass_p = m_mass_p - t_mass_p
+            sample_vol_without_air_p = c_vol_p * (1.0 - sample_air_p * 0.01)
+            sample_unit_vol_mass_p = (sample_mass_p / sample_vol_without_air_p) * 1000 if sample_vol_without_air_p > 0 else 0
+            diff_mass_p = unit_vol_mass_mix_p - sample_unit_vol_mass_p
+            water_error_p = diff_mass_p * 0.7
+            estimated_water_p = plant['w_design'] + water_error_p
+            diff_val_p = round(estimated_water_p - plant['w_design'])
+
+            st.markdown(f"""
+            <div style="background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 10px 0; border: 1px solid #cbd5e1;">
+                <div style="font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 4px;">📊 簡易計算結果プレビュー</div>
+                <div style="display: flex; justify-content: space-around; font-size: 14px; font-weight: bold; color: #0f172a;">
+                    <span>推定単位水量: <strong style="color: #2563eb; font-size: 16px;">{round(estimated_water_p)}</strong> kg/m³</span>
+                    <span>配合計画水量: <strong>{int(plant['w_design'])}</strong> kg/m³</span>
+                    <span>差分: <strong style="color: {'#dc2626' if diff_val_p > 0 else '#2563eb'};">{diff_val_p:+d}</strong> kg/m³</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     elif active_tab == "プラント":
         st.header("プラント配合の選択・切替")
@@ -561,8 +597,16 @@ else:
                 st.error(f"読み込みに失敗しました: {e}")
 
     # ==========================================
-    # ナビゲーションメニュー
+    # メニュー切り替えの直前に「単位水量推定結果」ボタンを配置（黄色）
     # ==========================================
+    if active_tab == "測定" and st.session_state.plants and st.session_state.air_meters:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('<div class="yellow-btn">', unsafe_allow_html=True)
+        if st.button("🌟 単位水量推定結果", use_container_width=True):
+            st.session_state.show_exact_result_view = True
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
     st.markdown("---")
     st.markdown("### 📌 メニュー切り替え")
     tabs = ["測定", "プラント", "メーター", "履歴", "データ管理"]
