@@ -237,9 +237,7 @@ if st.session_state.show_exact_result_view:
             margin: 0 auto;
             text-align: center;
         }}
-        .title-bar {{
-            background-color: #dcdcdc;
-            padding: 8px 0;
+        .title-text {{
             font-size: 20px;
             font-weight: bold;
             color: #000000;
@@ -323,7 +321,7 @@ if st.session_state.show_exact_result_view:
     </head>
     <body>
         <div class="container">
-            <div class="title-bar">生コン単位水量推定試験</div>
+            <div class="title-text">生コン単位水量推定試験</div>
             <div class="subtitle-bar">（土木研究所法 ［無注水法］ ）</div>
 
             <div class="section-label">生コン種類</div>
