@@ -43,9 +43,27 @@ st.markdown("""
 .stApp {
     background-color: #b0b0b0 !important;
 }
-/* Streamlitの上の黒いバー（Fork、GitHub、設定など）を非表示にする */
+/* Streamlitの上の黒いバー、下のデプロイボタン・バッジ・フッターを完全に非表示にする */
 header[data-testid="stHeader"] {
     display: none !important;
+}
+footer {
+    visibility: hidden !important;
+    display: none !important;
+}
+.stAppDeployButton {
+    display: none !important;
+    visibility: hidden !important;
+}
+div[data-testid="stDecoration"] {
+    display: none !important;
+}
+div[data-testid="stStatusWidget"] {
+    visibility: hidden !important;
+    display: none !important;
+}
+#MainMenu {
+    visibility: hidden !important;
 }
 h1 {
     font-size: 24px !important;
