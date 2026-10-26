@@ -793,7 +793,11 @@ else:
         st.header("保存済み測定履歴")
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
-                err_val = hist.get("誤差", hist["推定単位水量"] - hist["設計単位水量"])
+                
+                est_w = hist.get("推定単位水量(kg/m3)", hist.get("推定単位水量", 0))
+                des_w = hist.get("設計単位水量", 0)
+                err_val = hist.get("誤差", est_w - des_w)
+
                 meter_str = hist.get("エアメーター", "C13-WP776185XT")
                 
                 st.markdown(f"""
@@ -802,7 +806,7 @@ else:
                         📌 No.{idx+1} ｜ {hist['日時']} | {hist['現場名']}
                     </div>
                     <div style="color: #93c5fd; font-size: 13px; margin-bottom: 4px;">
-                        工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist['推定単位水量(kg/m3)']}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
+                        工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist.get("推定単位水量(kg/m3)", hist.get("推定単位水量", 0))}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -817,7 +821,7 @@ else:
                         st.write(f"- **プラント・配合**: {hist['プラント']} ({hist['配合']})")
                         st.write(f"- **使用エアメーター**: {meter_str}")
                         st.write(f"- **設計単位水量**: {hist['設計単位水量']} kg/m³")
-                        st.write(f"- **推定単位水量**: {hist['推定単位水量(kg/m3)']} kg/m³")
+                        st.write(f"- **推定単位水量**: {hist.get("推定単位水量(kg/m3)", hist.get("推定単位水量", 0))} kg/m³")
                         st.write(f"- **誤差**: {err_val:+d} kg/m³")
                         st.write(f"- **測定空気量**: {hist['測定空気量(%)']}%")
                     with col_det2:
