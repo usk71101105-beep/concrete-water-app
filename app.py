@@ -830,7 +830,7 @@ else:
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
                 
-                est_w = hist.get("推定単位水量(kg/m3)", hist.get("推定単位水量", 0))
+                est_w = hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))
                 des_w = hist.get("設計単位水量", 0)
                 err_val = hist.get("誤差", est_w - des_w)
 
@@ -842,7 +842,7 @@ else:
                         📌 No.{idx+1} ｜ {hist['日時']} | {hist['現場名']}
                     </div>
                     <div style="color: #93c5fd; font-size: 13px; margin-bottom: 4px;">
-                        工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist.get("推定単位水量(kg/m3)", hist.get("推定単位水量", 0))}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
+                        工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -857,7 +857,7 @@ else:
                         st.write(f"- **プラント・配合**: {hist['プラント']} ({hist['配合']})")
                         st.write(f"- **使用エアメーター**: {meter_str}")
                         st.write(f"- **設計単位水量**: {hist['設計単位水量']} kg/m³")
-                        st.write(f"- **推定単位水量**: {hist.get("推定単位水量(kg/m3)", hist.get("推定単位水量", 0))} kg/m³")
+                        st.write(f"- **推定単位水量**: {hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))} kg/m³")
                         st.write(f"- **誤差**: {err_val:+d} kg/m³")
                         st.write(f"- **測定空気量**: {hist['測定空気量(%)']}%")
                     with col_det2:
@@ -900,6 +900,89 @@ else:
 
     elif active_tab == "データ管理":
         st.header("設定データ・測定履歴の保存と読み込み")
+
+
+        # GitHubバックアップ機能
+        with st.expander("🐙 GitHub自動バックアップ・同期設定", expanded=False):
+            st.markdown("サーバー再起動による初期化対策として、ボタン一つでGitHubのリポジトリにJSONデータ（プラント設定や履歴）を直接アップロード（バックアップ）できます。")
+            
+            gh_token = st.text_input("GitHub パーソナルアクセストークン (PAT)", type="password", value=st.session_state.get("gh_token", ""), key="gh_token_input")
+            gh_repo = st.text_input("リポジトリ名 (例: owner/repo)", value=st.session_state.get("gh_repo", ""), key="gh_repo_input")
+            gh_branch = st.text_input("ブランチ名", value=st.session_state.get("gh_branch", "main"), key="gh_branch_input")
+            
+            st.session_state.gh_token = gh_token
+            st.session_state.gh_repo = gh_repo
+            st.session_state.gh_branch = gh_branch
+            
+            import base64
+            
+            def upload_to_github(file_path, repo, token, branch="main"):
+                if not os.path.exists(file_path):
+                    return False, "ファイルが存在しません"
+                if not token or not repo:
+                    return False, "トークンとリポジトリ名を入力してください"
+                
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        file_content = f.read()
+                    
+                    encoded_content = base64.b64encode(file_content.encode('utf-8')).decode('utf-8')
+                    api_url = f"https://api.github.com/repos/{repo}/contents/{file_path}"
+                    
+                    # まず既存ファイルのshaを取得（更新のため）
+                    req_get = urllib.request.Request(
+                        api_url + f"?ref={branch}",
+                        headers={
+                            "Authorization": f"Bearer {token}",
+                            "Accept": "application/vnd.github+json",
+                            "User-Agent": "Streamlit-App"
+                        }
+                    )
+                    sha = None
+                    try:
+                        with urllib.request.urlopen(req_get) as res:
+                            data = json.loads(res.read().decode('utf-8'))
+                            sha = data.get("sha")
+                    except Exception:
+                        pass # 新規作成の場合
+                    
+                    payload = {
+                        "message": f"Auto backup {file_path} from Streamlit app",
+                        "content": encoded_content,
+                        "branch": branch
+                    }
+                    if sha:
+                        payload["sha"] = sha
+                        
+                    req_put = urllib.request.Request(
+                        api_url,
+                        data=json.dumps(payload).encode('utf-8'),
+                        headers={
+                            "Authorization": f"Bearer {token}",
+                            "Content-Type": "application/json",
+                            "Accept": "application/vnd.github+json",
+                            "User-Agent": "Streamlit-App"
+                        },
+                        method="PUT"
+                    )
+                    with urllib.request.urlopen(req_put) as res:
+                        return True, "成功"
+                except Exception as e:
+                    return False, str(e)
+
+            col_gh1, col_gh2 = st.columns(2)
+            with col_gh1:
+                if st.button("🚀 GitHubへ全データをバックアップ", use_container_width=True, type="primary"):
+                    success_master, msg_master = upload_to_github(MASTER_FILE, gh_repo, gh_token, gh_branch)
+                    success_hist, msg_hist = upload_to_github(HISTORY_FILE, gh_repo, gh_token, gh_branch)
+                    if success_master and success_hist:
+                        st.success("GitHubへのバックアップが完了しました！")
+                    else:
+                        st.error(f"バックアップに失敗しました (Master: {msg_master}, History: {msg_hist})")
+            with col_gh2:
+                if st.button("🔄 GitHubからデータを復元", use_container_width=True):
+                    st.info("GitHubからの復元機能は上の「JSONファイル読み込み」をご利用いただくか、リポジトリから直接ダウンロードして読み込んでください。")
+
 
         # 端末・ユーザープロファイル設定
         with st.expander("📱 端末・ユーザーごとの独立プロファイル設定（PCとスマホの履歴分離）", expanded=False):
