@@ -156,6 +156,8 @@ if "meas_site_name_input" not in st.session_state:
     st.session_state.meas_site_name_input = "〇〇現場"
 if "meas_project_name_input" not in st.session_state:
     st.session_state.meas_project_name_input = "〇〇道路改良工事"
+if "meas_inspector_input" not in st.session_state:
+    st.session_state.meas_inspector_input = "内藤 祐介"
 
 if "history" not in st.session_state:
     if os.path.exists(HISTORY_FILE):
@@ -391,6 +393,7 @@ if st.session_state.show_exact_result_view:
                     "日時": record_time,
                     "現場名": st.session_state.get("meas_site_name_input", "〇〇現場"),
                     "工事件名": st.session_state.get("meas_project_name_input", "〇〇工事"),
+                    "測定者": st.session_state.get("meas_inspector_input", "担当者"),
                     "プラント": plant['plant_name'],
                     "配合": plant['mix_name'],
                     "設計単位水量": int(round(w_des)),
@@ -418,6 +421,7 @@ else:
             with st.form("measurement_form"):
                 site_name = st.text_input("現場名", value=st.session_state.get("meas_site_name_input", "〇〇現場"))
                 project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", "〇〇道路改良工事"))
+                inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", "内藤 祐介"))
                 
                 plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
                 default_index = 0
@@ -487,6 +491,7 @@ else:
                 if submitted:
                     st.session_state.meas_site_name_input = site_name
                     st.session_state.meas_project_name_input = project_name
+                    st.session_state.meas_inspector_input = inspector_name
                     st.session_state.show_exact_result_view = True
 
     elif active_tab == "プラント":
@@ -619,7 +624,7 @@ else:
                         📌 No.{idx+1} ｜ {hist['日時']} | {hist['現場名']}
                     </div>
                     <div style="color: #93c5fd; font-size: 13px; margin-bottom: 4px;">
-                        工事件名: {hist['工事件名']} ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist['推定単位水量(kg/m3)']}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
+                        工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist['推定単位水量(kg/m3)']}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -630,6 +635,7 @@ else:
                         st.write(f"- **日時**: {hist['日時']}")
                         st.write(f"- **現場名**: {hist['現場名']}")
                         st.write(f"- **工事件名**: {hist['工事件名']}")
+                        st.write(f"- **測定者**: {hist.get('測定者', '-')}")
                         st.write(f"- **プラント・配合**: {hist['プラント']} ({hist['配合']})")
                         st.write(f"- **使用エアメーター**: {meter_str}")
                         st.write(f"- **設計単位水量**: {hist['設計単位水量']} kg/m³")
