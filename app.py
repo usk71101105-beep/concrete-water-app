@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import json
 import os
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="生コン単位水量推定試験",
@@ -375,7 +376,7 @@ elif active_tab == "データ管理":
             st.error(f"読み込みに失敗しました: {e}")
 
 # ==========================================
-# ナビゲーションメニューを一番下に配置 ＆ スクロールトップ処理
+# ナビゲーションメニューを一番下に配置 ＆ 確実なスクロールトップ処理
 # ==========================================
 st.markdown("---")
 st.markdown("### 📌 メニュー切り替え")
@@ -384,9 +385,18 @@ selected_tab = st.radio("画面移動", tabs, index=tabs.index(active_tab), hori
 
 if selected_tab != active_tab:
     st.session_state.current_tab = selected_tab
-    st.markdown("""
+    components.html("""
         <script>
-            window.scrollTo({top: 0, behavior: 'instant'});
+            function scrollToTop() {
+                window.parent.scrollTo({top: 0, behavior: 'instant'});
+                window.scrollTo({top: 0, behavior: 'instant'});
+                const docEl = window.parent.document.documentElement;
+                if (docEl) docEl.scrollTop = 0;
+                const body = window.parent.document.body;
+                if (body) body.scrollTop = 0;
+            }
+            scrollToTop();
+            setTimeout(scrollToTop, 50);
         </script>
-    """, unsafe_allow_html=True)
+    """, height=0)
     st.rerun()
