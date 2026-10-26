@@ -65,6 +65,16 @@ div[data-testid="stStatusWidget"] {
 #MainMenu {
     visibility: hidden !important;
 }
+/* 追加：右下のバッジやウォーターマークを完全に非表示にする */
+div[class*="viewerBadge"] {
+    display: none !important;
+}
+.styles_viewerBadge__1yG5_ {
+    display: none !important;
+}
+[data-testid="stToolbar"] {
+    display: none !important;
+}
 h1 {
     font-size: 24px !important;
     text-align: center !important;
