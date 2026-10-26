@@ -1,0 +1,183 @@
+{
+    "plants": [
+        {
+            "id": 1,
+            "plant_name": "稲城レミックス",
+            "mix_name": "27-12-20-M",
+            "nominal_strength": "27",
+            "slump": 12.0,
+            "max_aggregate": 20,
+            "concrete_type": "M (中庸熱)",
+            "w_design": 167.0,
+            "c": 304.0,
+            "s": 869.0,
+            "g": 966.0
+        },
+        {
+            "id": 5,
+            "plant_name": "昭和エスオーシー",
+            "mix_name": "27-12-20-M",
+            "nominal_strength": "27",
+            "slump": 12.0,
+            "max_aggregate": 20,
+            "concrete_type": "M (中庸熱)",
+            "w_design": 172.0,
+            "c": 328.0,
+            "s": 829.0,
+            "g": 977.0
+        },
+        {
+            "id": 6,
+            "plant_name": "宇部府中",
+            "mix_name": "27-12-20-M",
+            "w_design": 168.0,
+            "c": 323.0,
+            "s": 884.0,
+            "g": 934.0
+        },
+        {
+            "id": 7,
+            "plant_name": "中村建材",
+            "mix_name": "27-12-20-BB",
+            "w_design": 164.0,
+            "c": 314.0,
+            "s": 844.0,
+            "g": 974.0
+        },
+        {
+            "id": 8,
+            "plant_name": "小沢建材",
+            "mix_name": "24-8-20-BB",
+            "w_design": 158.0,
+            "c": 274.0,
+            "s": 928.0,
+            "g": 957.0
+        },
+        {
+            "id": 9,
+            "plant_name": "東生コン",
+            "mix_name": "24-8-20-BB",
+            "w_design": 155.0,
+            "c": 277.0,
+            "s": 814.0,
+            "g": 1036.0
+        },
+        {
+            "id": 10,
+            "plant_name": "ユニテック",
+            "mix_name": "27-12-20-BB",
+            "w_design": 175.0,
+            "c": 336.0,
+            "s": 815.0,
+            "g": 962.0
+        },
+        {
+            "id": 11,
+            "plant_name": "土方建材",
+            "mix_name": "30-18-20-M",
+            "w_design": 170.0,
+            "c": 330.0,
+            "s": 889.0,
+            "g": 910.0
+        },
+        {
+            "id": 12,
+            "plant_name": "角屋物産",
+            "mix_name": "21-8-25-BB",
+            "w_design": 162.0,
+            "c": 290.0,
+            "s": 855.0,
+            "g": 974.0
+        },
+        {
+            "id": 13,
+            "plant_name": "むさしの生コン",
+            "mix_name": "27-15-20-N",
+            "w_design": 176.0,
+            "c": 326.0,
+            "s": 868.0,
+            "g": 920.0
+        },
+        {
+            "id": 14,
+            "plant_name": "令和共同生コン",
+            "mix_name": "曲げ4.5-6.5-20-N",
+            "w_design": 164.0,
+            "c": 312.0,
+            "s": 821.0,
+            "g": 1013.0
+        }
+    ],
+    "air_meters": [
+        {
+            "id": 2,
+            "meter_name": "C13-WP776185XT",
+            "container_volume": 7020.0,
+            "total_mass": 6323.0,
+            "calibration_date": "2026-10-01"
+        },
+        {
+            "id": 3,
+            "meter_name": "34424",
+            "container_volume": 7041.0,
+            "total_mass": 6840.0,
+            "calibration_date": "2026-10-01"
+        },
+        {
+            "id": 4,
+            "meter_name": "CF13-1156",
+            "container_volume": 6984.0,
+            "total_mass": 5919.0,
+            "calibration_date": "2026-10-01"
+        },
+        {
+            "id": 5,
+            "meter_name": "C13PW4995XT",
+            "container_volume": 6856.0,
+            "total_mass": 5761.0,
+            "calibration_date": "2026-10-01"
+        },
+        {
+            "id": 6,
+            "meter_name": "C13WP4801XT",
+            "container_volume": 6913.0,
+            "total_mass": 5909.0,
+            "calibration_date": "2026-10-01"
+        },
+        {
+            "id": 7,
+            "meter_name": "C13WP-5489XT",
+            "container_volume": 7021.0,
+            "total_mass": 5815.0,
+            "calibration_date": "2026-10-01"
+        },
+        {
+            "id": 8,
+            "meter_name": "C13WP-3646XT",
+            "container_volume": 7029.0,
+            "total_mass": 5885.0,
+            "calibration_date": "2026-10-01"
+        },
+        {
+            "id": 9,
+            "meter_name": "C13WP-765907XT",
+            "container_volume": 7024.0,
+            "total_mass": 6343.0,
+            "calibration_date": "2026-10-01"
+        },
+        {
+            "id": 10,
+            "meter_name": "C13WP-776328XT",
+            "container_volume": 7028.0,
+            "total_mass": 6310.0,
+            "calibration_date": "2026-10-01"
+        },
+        {
+            "id": 11,
+            "meter_name": "C13WP-776328XT",
+            "container_volume": 7028.0,
+            "total_mass": 6310.0,
+            "calibration_date": "2026-10-01"
+        }
+    ]
+}
