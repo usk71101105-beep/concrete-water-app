@@ -204,6 +204,36 @@ if active_tab == "測定":
             st.success("保存しました！「履歴」タブからいつでも確認できます。")
 
 elif active_tab == "プラント":
+    st.header("プラント配合の選択・切替")
+    
+    if st.session_state.plants:
+        ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{p['w_design']}kg)": p for p in st.session_state.plants}
+        selected_ref_key = st.selectbox("今回の測定に反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
+        ref_plant = ref_options[selected_ref_key]
+        
+        col_ref1, col_ref2 = st.columns(2)
+        with col_ref1:
+            if st.button("選択した配合を今回の測定に反映する", type="primary", use_container_width=True):
+                st.session_state.active_plant_id = ref_plant.get('id')
+                st.session_state.current_tab = "測定"
+                components.html("""
+                    <script>
+                        window.parent.scrollTo({top: 0, behavior: 'instant'});
+                        window.scrollTo({top: 0, behavior: 'instant'});
+                    </script>
+                """, height=0)
+                st.rerun()
+        with col_ref2:
+            if st.button("プラント登録をすべてリセット", use_container_width=True):
+                st.session_state.plants = []
+                save_master()
+                st.rerun()
+
+    # 少し間を開ける
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
+
     st.header("プラント・配合マスタ登録（自由入力）")
     
     p_name = st.text_input("プラント名", value="A工場", key="reg_p_name")
@@ -249,28 +279,8 @@ elif active_tab == "プラント":
         st.rerun()
 
     if st.session_state.plants:
-        st.markdown("---")
-        ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{p['w_design']}kg)": p for p in st.session_state.plants}
-        selected_ref_key = st.selectbox("今回の測定に反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
-        ref_plant = ref_options[selected_ref_key]
-        
-        if st.button("選択した配合を今回の測定に反映する", type="primary"):
-            st.session_state.active_plant_id = ref_plant.get('id')
-            st.session_state.current_tab = "測定"
-            components.html("""
-                <script>
-                    window.parent.scrollTo({top: 0, behavior: 'instant'});
-                    window.scrollTo({top: 0, behavior: 'instant'});
-                </script>
-            """, height=0)
-            st.rerun()
-            
-        if st.button("プラント登録をすべてリセット"):
-            st.session_state.plants = []
-            save_master()
-            st.rerun()
-
         # 登録済み配合の管理（修正・削除）を一番下に配置
+        st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("---")
         st.subheader("登録済み配合の管理（修正・削除）")
         
