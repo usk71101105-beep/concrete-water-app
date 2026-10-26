@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# カスタムCSS：すべてのテキストやエクスパンダー、ラベルを白や指定色に確実に設定
+# カスタムCSS：すべてのテキストやボタン、エクスパンダーの文字を確実に白色に設定
 st.markdown("""
 <style>
 /* 全体の背景とレイアウトを画像風のグレーに調整 */
@@ -35,17 +35,17 @@ h1 {
 h3, p, label {
     color: #000000 !important;
 }
-/* 黄色のカスタムボタン（文字を白に指定、文字色を強制） */
-.yellow-btn button {
+/* 黄色のカスタムボタンおよびすべてのStreamlitボタン内の文字を白に強制 */
+.yellow-btn button, .stButton button {
     background-color: #eab308 !important;
     color: #ffffff !important;
     font-weight: bold !important;
     border: none !important;
 }
-.yellow-btn button p, .yellow-btn button span {
+.yellow-btn button *, .stButton button * {
     color: #ffffff !important;
 }
-.yellow-btn button:hover {
+.yellow-btn button:hover, .stButton button:hover {
     background-color: #ca8a04 !important;
     color: #ffffff !important;
 }
