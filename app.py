@@ -158,7 +158,7 @@ def save_history_store():
 
 active_tab = st.session_state.current_tab
 
-# --- 画像完全一致の結果画面（ワンタップ表示） ---
+# --- 画像完全一致の結果画面（ワンタップ表示・中央寄せ＆グリッド整列対応） ---
 if st.session_state.show_exact_result_view:
     plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
     plant = plant_options.get(list(plant_options.keys())[0])
@@ -185,6 +185,7 @@ if st.session_state.show_exact_result_view:
     diff_mass = unit_vol_mass_mix - sample_unit_vol_mass
     water_error = diff_mass * 0.7
     estimated_water = plant['w_design'] + water_error
+    diff_val = round(estimated_water - plant['w_design'])
 
     components.html(f"""
     <!DOCTYPE html>
@@ -241,37 +242,51 @@ if st.session_state.show_exact_result_view:
             align-items: center;
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
         }}
-        .result-row {{
-            display: flex;
-            justify-content: space-between;
+        /* 結果部分：グリッドで項目・数値・単位の列を完全に揃えつつ中央寄りに配置 */
+        .result-grid {{
+            display: grid;
+            grid-template-columns: 140px 75px 75px;
             align-items: center;
-            margin: 6px 0;
+            margin: 8px auto;
+            max-width: 310px;
+        }}
+        .r-label-blue {{
+            color: #2563eb;
             font-size: 18px;
             font-weight: bold;
+            text-align: left;
         }}
-        .label-blue {{
-            color: #2563eb;
-            font-size: 18px;
-        }}
-        .val-blue {{
+        .r-val-blue {{
             color: #2563eb;
             font-size: 22px;
+            font-weight: bold;
+            text-align: right;
+            padding-right: 8px;
         }}
-        .unit-blue {{
+        .r-unit-blue {{
             color: #2563eb;
             font-size: 18px;
+            font-weight: bold;
+            text-align: left;
         }}
-        .label-black {{
+        .r-label-black {{
             color: #000000;
             font-size: 18px;
+            font-weight: bold;
+            text-align: left;
         }}
-        .val-black {{
+        .r-val-black {{
             color: #000000;
             font-size: 22px;
+            font-weight: bold;
+            text-align: right;
+            padding-right: 8px;
         }}
-        .unit-black {{
+        .r-unit-black {{
             color: #000000;
             font-size: 18px;
+            font-weight: bold;
+            text-align: left;
         }}
     </style>
     </head>
@@ -303,21 +318,22 @@ if st.session_state.show_exact_result_view:
                 <span style="font-size:16px; font-weight:normal;">%</span>
             </div>
 
-            <div class="result-row">
-                <span class="label-blue">推定単位水量</span>
-                <span class="val-blue">{round(estimated_water)}</span>
-                <span class="unit-blue">kg/m³</span>
+            <div class="result-grid">
+                <div class="r-label-blue">推定単位水量</div>
+                <div class="r-val-blue">{round(estimated_water)}</div>
+                <div class="r-unit-blue">kg/m³</div>
             </div>
 
-            <div class="result-row">
-                <span class="label-black">配合計画水量</span>
-                <span class="val-black">{int(plant['w_design'])}</span>
-                <span class="unit-black">kg/m³</span>
+            <div class="result-grid">
+                <div class="r-label-black">配合計画水量</div>
+                <div class="r-val-black">{int(plant['w_design'])}</div>
+                <div class="r-unit-black">kg/m³</div>
             </div>
 
-            <div class="result-row" style="justify-content: flex-end; gap: 45px; margin-top: 4px;">
-                <span style="font-size: 22px; font-weight: bold; color: #000000;">{round(estimated_water - plant['w_design'])}</span>
-                <span style="font-size: 18px; font-weight: bold; color: #000000;">kg/m³</span>
+            <div class="result-grid">
+                <div></div>
+                <div class="r-val-black">{diff_val}</div>
+                <div class="r-unit-black">kg/m³</div>
             </div>
         </div>
     </body>
@@ -630,9 +646,6 @@ else:
             except Exception as e:
                 st.error(f"読み込みに失敗しました: {e}")
 
-    # ==========================================
-    # メニュー切り替えの直前に「単位水量推定結果」ボタンを配置（黄色・文字白）
-    # ==========================================
     if active_tab == "測定" and st.session_state.plants and st.session_state.air_meters:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<div class="yellow-btn">', unsafe_allow_html=True)
