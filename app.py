@@ -39,16 +39,17 @@ h1 {
 h3, p, label {
     color: #000000 !important;
 }
-.yellow-btn button, .stButton button {
+/* すべてのボタン（通常ボタン・フォーム送信ボタン・プライマリボタン等）の背景を黄色、文字を白に強制 */
+.yellow-btn button, .stButton button, div[data-testid="stFormSubmitButton"] button {
     background-color: #eab308 !important;
     color: #ffffff !important;
     font-weight: bold !important;
     border: none !important;
 }
-.yellow-btn button *, .stButton button * {
+.yellow-btn button *, .stButton button *, div[data-testid="stFormSubmitButton"] button * {
     color: #ffffff !important;
 }
-.yellow-btn button:hover, .stButton button:hover {
+.yellow-btn button:hover, .stButton button:hover, div[data-testid="stFormSubmitButton"] button:hover {
     background-color: #ca8a04 !important;
     color: #ffffff !important;
 }
@@ -96,10 +97,10 @@ if "plants" not in st.session_state:
                 "id": 1,
                 "plant_name": "中村建材",
                 "mix_name": "27-12-20-BB",
-                "w_design": 164.0,
-                "c": 300.0,
-                "s": 780.0,
-                "g": 950.0,
+                "w_design": 164,
+                "c": 300,
+                "s": 780,
+                "g": 950,
             }
         ]
     if not st.session_state.get("air_meters"):
@@ -107,8 +108,8 @@ if "plants" not in st.session_state:
             {
                 "id": 1,
                 "meter_name": "C13-WP776185XT",
-                "container_volume": 7000.0,
-                "total_mass": 4250.0,
+                "container_volume": 7000,
+                "total_mass": 4250,
                 "calibration_date": "2026-04-01"
             }
         ]
@@ -150,7 +151,7 @@ def save_history_store():
 
 active_tab = st.session_state.current_tab
 
-# --- 画像完全一致の結果画面（中央寄せ・中央付近の適度な間隔調整対応） ---
+# --- 画像完全一致の結果画面（中央寄せ・空気量以外は小数点以下省略） ---
 if st.session_state.show_exact_result_view:
     plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
     plant = plant_options.get(list(plant_options.keys())[0])
@@ -160,14 +161,19 @@ if st.session_state.show_exact_result_view:
             break
             
     air_fixed = 4.5
-    mass_1m3 = plant['w_design'] + plant['c'] + plant['s'] + plant['g']
-    vol_without_air = 1.0 - ((air_fixed + plant['c'] * 0.001) * 0.01)
+    w_des = float(plant['w_design'])
+    c_val = float(plant['c'])
+    s_val = float(plant['s'])
+    g_val = float(plant['g'])
+    
+    mass_1m3 = w_des + c_val + s_val + g_val
+    vol_without_air = 1.0 - ((air_fixed + c_val * 0.001) * 0.01)
     unit_vol_mass_mix = mass_1m3 / vol_without_air if vol_without_air > 0 else 0
     
-    container_vol = st.session_state.get("meas_container_vol", 7000.0)
-    total_mass = st.session_state.get("meas_total_mass", 4250.0)
-    measured_mass = st.session_state.get("meas_measured_mass", 22875)
-    measured_air = st.session_state.get("meas_measured_air", 3.1)
+    container_vol = float(st.session_state.get("meas_container_vol", 7000))
+    total_mass = float(st.session_state.get("meas_total_mass", 4250))
+    measured_mass = float(st.session_state.get("meas_measured_mass", 22875))
+    measured_air = st.session_state.get("meas_measured_air", 3.1) # 空気量は小数保持
     
     bonezai_hosei = 0.0
     sample_air = measured_air - bonezai_hosei
@@ -176,8 +182,8 @@ if st.session_state.show_exact_result_view:
     sample_unit_vol_mass = (sample_mass / sample_vol_without_air) * 1000 if sample_vol_without_air > 0 else 0
     diff_mass = unit_vol_mass_mix - sample_unit_vol_mass
     water_error = diff_mass * 0.7
-    estimated_water = plant['w_design'] + water_error
-    diff_val = round(estimated_water - plant['w_design'])
+    estimated_water = w_des + water_error
+    diff_val = round(estimated_water - w_des)
 
     components.html(f"""
     <!DOCTYPE html>
@@ -221,7 +227,6 @@ if st.session_state.show_exact_result_view:
             margin-bottom: 2px;
             padding-left: 2px;
         }}
-        /* 白枠：中央寄せにしつつ、要素間は適度な間隔（ギャップ）を空ける仕様に変更 */
         .white-box {{
             background-color: #ffffff;
             border-radius: 2px;
@@ -236,7 +241,6 @@ if st.session_state.show_exact_result_view:
             gap: 20px;
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
         }}
-        /* 結果部分：グリッドで項目・数値・単位の列を完全に揃えつつ中央寄りに配置 */
         .result-grid {{
             display: grid;
             grid-template-columns: 140px 75px 75px;
@@ -302,7 +306,7 @@ if st.session_state.show_exact_result_view:
 
             <div class="section-label">測定器重量</div>
             <div class="white-box">
-                <span>{measured_mass}</span>
+                <span>{int(round(measured_mass))}</span>
                 <span style="font-size:16px; font-weight:normal;">g</span>
             </div>
 
@@ -314,13 +318,13 @@ if st.session_state.show_exact_result_view:
 
             <div class="result-grid">
                 <div class="r-label-blue">推定単位水量</div>
-                <div class="r-val-blue">{round(estimated_water)}</div>
+                <div class="r-val-blue">{int(round(estimated_water))}</div>
                 <div class="r-unit-blue">kg/m³</div>
             </div>
 
             <div class="result-grid">
                 <div class="r-label-black">配合計画水量</div>
-                <div class="r-val-black">{int(plant['w_design'])}</div>
+                <div class="r-val-black">{int(round(w_des))}</div>
                 <div class="r-unit-black">kg/m³</div>
             </div>
 
@@ -334,7 +338,6 @@ if st.session_state.show_exact_result_view:
     </html>
     """, height=490)
 
-    # 戻るボタンと保存ボタンをさらに下へ離す
     st.markdown("<br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     with st.expander("🛠️ 操作パネル（戻る・結果保存）"):
         col_b1, col_b2 = st.columns(2)
@@ -354,8 +357,8 @@ if st.session_state.show_exact_result_view:
                     "工事件名": st.session_state.get("meas_project_name", "〇〇工事"),
                     "プラント": plant['plant_name'],
                     "配合": plant['mix_name'],
-                    "設計単位水量": plant['w_design'],
-                    "推定単位水量(kg/m3)": round(estimated_water, 1),
+                    "設計単位水量": int(round(w_des)),
+                    "推定単位水量(kg/m3)": int(round(estimated_water)),
                     "測定空気量(%)": measured_air
                 }
                 st.session_state.history.append(new_record)
@@ -399,15 +402,19 @@ else:
             with col_in2:
                 st.session_state.meas_measured_air = st.number_input("測定空気量 (%)", value=3.1, step=0.1, format="%.1f", key="meas_air_input")
 
-            # --- 測定質量と空気量の下に小さく結果を表示 ---
             air_fixed_p = 4.5
-            mass_1m3_p = plant['w_design'] + plant['c'] + plant['s'] + plant['g']
-            vol_without_air_p = 1.0 - ((air_fixed_p + plant['c'] * 0.001) * 0.01)
+            w_des_p = float(plant['w_design'])
+            c_val_p = float(plant['c'])
+            s_val_p = float(plant['s'])
+            g_val_p = float(plant['g'])
+            
+            mass_1m3_p = w_des_p + c_val_p + s_val_p + g_val_p
+            vol_without_air_p = 1.0 - ((air_fixed_p + c_val_p * 0.001) * 0.01)
             unit_vol_mass_mix_p = mass_1m3_p / vol_without_air_p if vol_without_air_p > 0 else 0
             
-            c_vol_p = st.session_state.get("meas_container_vol", 7000.0)
-            t_mass_p = st.session_state.get("meas_total_mass", 4250.0)
-            m_mass_p = st.session_state.get("meas_measured_mass", 22875)
+            c_vol_p = float(st.session_state.get("meas_container_vol", 7000))
+            t_mass_p = float(st.session_state.get("meas_total_mass", 4250))
+            m_mass_p = float(st.session_state.get("meas_measured_mass", 22875))
             m_air_p = st.session_state.get("meas_measured_air", 3.1)
             
             sample_air_p = m_air_p
@@ -416,15 +423,15 @@ else:
             sample_unit_vol_mass_p = (sample_mass_p / sample_vol_without_air_p) * 1000 if sample_vol_without_air_p > 0 else 0
             diff_mass_p = unit_vol_mass_mix_p - sample_unit_vol_mass_p
             water_error_p = diff_mass_p * 0.7
-            estimated_water_p = plant['w_design'] + water_error_p
-            diff_val_p = round(estimated_water_p - plant['w_design'])
+            estimated_water_p = w_des_p + water_error_p
+            diff_val_p = round(estimated_water_p - w_des_p)
 
             st.markdown(f"""
             <div style="background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 10px 0; border: 1px solid #cbd5e1;">
                 <div style="font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 4px;">📊 簡易計算結果プレビュー</div>
                 <div style="display: flex; justify-content: space-around; font-size: 14px; font-weight: bold; color: #0f172a;">
-                    <span>推定単位水量: <strong style="color: #2563eb; font-size: 16px;">{round(estimated_water_p)}</strong> kg/m³</span>
-                    <span>配合計画水量: <strong>{int(plant['w_design'])}</strong> kg/m³</span>
+                    <span>推定単位水量: <strong style="color: #2563eb; font-size: 16px;">{int(round(estimated_water_p))}</strong> kg/m³</span>
+                    <span>配合計画水量: <strong>{int(round(w_des_p))}</strong> kg/m³</span>
                     <span>差分: <strong style="color: {'#dc2626' if diff_val_p > 0 else '#2563eb'};">{diff_val_p:+d}</strong> kg/m³</span>
                 </div>
             </div>
@@ -433,7 +440,7 @@ else:
     elif active_tab == "プラント":
         st.header("プラント配合の選択・切替")
         if st.session_state.plants:
-            ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{p['w_design']}kg)": p for p in st.session_state.plants}
+            ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{int(round(float(p['w_design'])))}kg)": p for p in st.session_state.plants}
             default_ref_index = 0
             for idx, (k, p) in enumerate(ref_options.items()):
                 if p.get('id') == st.session_state.active_plant_id:
@@ -466,10 +473,10 @@ else:
         st.header("プラント・配合マスタ登録")
         p_name = st.text_input("プラント名", value="中村建材", key="reg_p_name")
         m_name = st.text_input("配合名", value="27-12-20-BB", key="reg_m_name")
-        w_d = st.number_input("① 水 (kg)", value=164.0, step=0.5, key="reg_w_d")
-        c_val = st.number_input("② セメント (kg)", value=300.0, step=1.0, key="reg_c_val")
-        s_val = st.number_input("③ 細骨材 合計 (kg)", value=780.0, step=1.0, key="reg_s_val")
-        g_val = st.number_input("④ 粗骨材 合計 (kg)", value=950.0, step=1.0, key="reg_g_val")
+        w_d = st.number_input("① 水 (kg)", value=164.0, step=1.0, format="%d", key="reg_w_d")
+        c_val = st.number_input("② セメント (kg)", value=300.0, step=1.0, format="%d", key="reg_c_val")
+        s_val = st.number_input("③ 細骨材 合計 (kg)", value=780.0, step=1.0, format="%d", key="reg_s_val")
+        g_val = st.number_input("④ 粗骨材 合計 (kg)", value=950.0, step=1.0, format="%d", key="reg_g_val")
         
         if st.button("この配合を登録する", type="primary", use_container_width=True):
             new_id = max([p.get('id', 0) for p in st.session_state.plants], default=0) + 1
@@ -477,10 +484,10 @@ else:
                 "id": new_id,
                 "plant_name": p_name, 
                 "mix_name": m_name, 
-                "w_design": w_d, 
-                "c": c_val, 
-                "s": s_val, 
-                "g": g_val
+                "w_design": int(round(w_d)), 
+                "c": int(round(c_val)), 
+                "s": int(round(s_val)), 
+                "g": int(round(g_val))
             })
             save_master()
             st.success(f"配合「{m_name} ({p_name})」を登録しました！")
@@ -492,24 +499,24 @@ else:
             st.subheader("登録済み配合の管理（修正・削除）")
             for idx, p in enumerate(st.session_state.plants):
                 p_id = p.get('id', idx)
-                with st.expander(f"【{p['plant_name']}】 {p['mix_name']} (水: {p['w_design']}kg)"):
+                with st.expander(f"【{p['plant_name']}】 {p['mix_name']} (水: {int(round(float(p['w_design'])))}kg)"):
                     with st.form(key=f"edit_plant_form_{p_id}"):
                         edit_p_name = st.text_input("プラント名", value=p['plant_name'], key=f"edit_p_name_{p_id}")
                         edit_m_name = st.text_input("配合名", value=p['mix_name'], key=f"edit_m_name_{p_id}")
-                        edit_w_d = st.number_input("① 水 (kg)", value=float(p['w_design']), step=0.5, key=f"edit_w_d_{p_id}")
-                        edit_c_val = st.number_input("② セメント (kg)", value=float(p['c']), step=1.0, key=f"edit_c_val_{p_id}")
-                        edit_s_val = st.number_input("③ 細骨材 合計 (kg)", value=float(p['s']), step=1.0, key=f"edit_s_val_{p_id}")
-                        edit_g_val = st.number_input("④ 粗骨材 合計 (kg)", value=float(p['g']), step=1.0, key=f"edit_g_val_{p_id}")
+                        edit_w_d = st.number_input("① 水 (kg)", value=float(p['w_design']), step=1.0, format="%d", key=f"edit_w_d_{p_id}")
+                        edit_c_val = st.number_input("② セメント (kg)", value=float(p['c']), step=1.0, format="%d", key=f"edit_c_val_{p_id}")
+                        edit_s_val = st.number_input("③ 細骨材 合計 (kg)", value=float(p['s']), step=1.0, format="%d", key=f"edit_s_val_{p_id}")
+                        edit_g_val = st.number_input("④ 粗骨材 合計 (kg)", value=float(p['g']), step=1.0, format="%d", key=f"edit_g_val_{p_id}")
                         
                         if st.form_submit_button("この内容で修正を保存する", type="primary"):
                             st.session_state.plants[idx] = {
                                 "id": p_id,
                                 "plant_name": edit_p_name,
                                 "mix_name": edit_m_name,
-                                "w_design": edit_w_d,
-                                "c": edit_c_val,
-                                "s": edit_s_val,
-                                "g": edit_g_val
+                                "w_design": int(round(edit_w_d)),
+                                "c": int(round(edit_c_val)),
+                                "s": int(round(edit_s_val)),
+                                "g": int(round(edit_g_val))
                             }
                             save_master()
                             st.success("プラント情報を更新しました！")
@@ -524,8 +531,8 @@ else:
         st.header("エアメーター情報登録")
         with st.form("meter_reg"):
             m_name = st.text_input("エアメーター識別名", value="C13-WP776185XT")
-            c_vol = st.number_input("⑩ 下容器容積 (cc)", value=7000.0, step=1.0)
-            t_mass = st.number_input("⑪ 蓋を含めた全容器質量 (g)", value=4250.0, step=1.0)
+            c_vol = st.number_input("⑩ 下容器容積 (cc)", value=7000.0, step=1.0, format="%d")
+            t_mass = st.number_input("⑪ 蓋を含めた全容器質量 (g)", value=4250.0, step=1.0, format="%d")
             cal_date = st.date_input("キャリブレーション日（校正日）", value=get_japan_today())
             
             if st.form_submit_button("エアメーターを登録する"):
@@ -533,8 +540,8 @@ else:
                 st.session_state.air_meters.append({
                     "id": new_m_id,
                     "meter_name": m_name, 
-                    "container_volume": c_vol, 
-                    "total_mass": t_mass,
+                    "container_volume": int(round(c_vol)), 
+                    "total_mass": int(round(t_mass)),
                     "calibration_date": cal_date.strftime("%Y-%m-%d")
                 })
                 save_master()
@@ -548,11 +555,11 @@ else:
             for idx, m in enumerate(st.session_state.air_meters):
                 m_id = m.get('id', idx)
                 cal_str = m.get('calibration_date', '未設定')
-                with st.expander(f"【{m['meter_name']}】 容積: {m['container_volume']}cc / 質量: {m['total_mass']}g (校正日: {cal_str})"):
+                with st.expander(f"【{m['meter_name']}】 容積: {int(round(float(m['container_volume'])))}cc / 質量: {int(round(float(m['total_mass'])))}g (校正日: {cal_str})"):
                     with st.form(key=f"edit_meter_form_{m_id}"):
                         edit_m_name = st.text_input("エアメーター識別名", value=m['meter_name'], key=f"edit_m_name_{m_id}")
-                        edit_c_vol = st.number_input("⑩ 下容器容積 (cc)", value=float(m['container_volume']), step=1.0, key=f"edit_c_vol_{m_id}")
-                        edit_t_mass = st.number_input("⑪ 蓋を含めた全容器質量 (g)", value=float(m['total_mass']), step=1.0, key=f"edit_t_mass_{m_id}")
+                        edit_c_vol = st.number_input("⑩ 下容器容積 (cc)", value=float(m['container_volume']), step=1.0, format="%d", key=f"edit_c_vol_{m_id}")
+                        edit_t_mass = st.number_input("⑪ 蓋を含めた全容器質量 (g)", value=float(m['total_mass']), step=1.0, format="%d", key=f"edit_t_mass_{m_id}")
                         try:
                             default_cal_dt = datetime.strptime(m.get('calibration_date', '2026-04-01'), "%Y-%m-%d").date()
                         except Exception:
@@ -563,8 +570,8 @@ else:
                             st.session_state.air_meters[idx] = {
                                 "id": m_id,
                                 "meter_name": edit_m_name,
-                                "container_volume": edit_c_vol,
-                                "total_mass": edit_t_mass,
+                                "container_volume": int(round(edit_c_vol)),
+                                "total_mass": int(round(edit_t_mass)),
                                 "calibration_date": edit_cal_date.strftime("%Y-%m-%d")
                             }
                             save_master()
