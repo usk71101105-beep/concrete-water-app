@@ -4,6 +4,8 @@ from datetime import datetime, date
 from zoneinfo import ZoneInfo
 import json
 import os
+import urllib.request
+import urllib.error
 import streamlit.components.v1 as components
 
 st.set_page_config(
@@ -16,6 +18,25 @@ def get_japan_now():
 
 def get_japan_today():
     return get_japan_now().date()
+
+# GASのウェブアプリURL
+GAS_URL = "https://script.google.com/macros/s/AKfycbxbGj0Xzxu1RtUlqZ_i6b_4TD4x8iqhbiJnze65mkRh-fnWvI-J8cKVEwmC6MoALf_x/exec"
+
+def send_to_spreadsheet(record):
+    try:
+        req = urllib.request.Request(
+            GAS_URL,
+            data=json.dumps(record).encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_body = response.read().decode('utf-8')
+            res_json = json.loads(res_body)
+            return res_json.get("status") == "success"
+    except Exception as e:
+        print(f"Spreadsheet send error: {e}")
+        return False
 
 st.markdown("""
 <style>
@@ -385,9 +406,14 @@ if st.session_state.show_exact_result_view:
                     "推定単位水量(kg/m3)": int(round(estimated_water)),
                     "測定空気量(%)": measured_air
                 }
+                # ローカル履歴に追加しつつ、スプレッドシートへ送信
                 st.session_state.history.append(new_record)
                 save_history_store()
-                st.success("保存しました！")
+                success_sheet = send_to_spreadsheet(new_record)
+                if success_sheet:
+                    st.success("結果を保存し、Googleスプレッドシートへ自動送信しました！")
+                else:
+                    st.success("結果をアプリ内に保存しました！（※スプレッドシートへの送信に失敗しました）")
 
 else:
     # --- 通常の入力・操作画面 ---
