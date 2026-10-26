@@ -427,7 +427,7 @@ if st.session_state.show_exact_result_view:
                     "プラント": plant['plant_name'],
                     "配合": plant['mix_name'],
                     "設計単位水量": int(round(w_des)),
-                    "推定単位水量(kg/m3)": int(round(estimated_water)),
+                    "推定単位水量": int(round(estimated_water)),
                     "測定空気量(%)": measured_air,
                     "誤差": diff_val,
                     "エアメーター": st.session_state.get("meas_meter_name", "C13-WP776185XT")
@@ -659,7 +659,7 @@ else:
         st.header("保存済み測定履歴")
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
-                err_val = hist.get("誤差", hist["推定単位水量(kg/m3)"] - hist["設計単位水量"])
+                err_val = hist.get("誤差", hist["推定単位水量"] - hist["設計単位水量"])
                 meter_str = hist.get("エアメーター", "C13-WP776185XT")
                 
                 st.markdown(f"""
