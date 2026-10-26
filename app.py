@@ -91,14 +91,14 @@ div[data-testid="stExpander"] details {
     border: 2px solid #3b82f6 !important;
     border-radius: 12px !important;
     background-color: #1e293b !important;
-    margin-top: 40px !important;
-    margin-bottom: 30px !important;
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
 }
 div[data-testid="stExpander"] summary {
-    font-size: 18px !important;
+    font-size: 16px !important;
     font-weight: bold !important;
     color: #ffffff !important;
-    padding: 12px !important;
+    padding: 10px !important;
     background-color: #1e293b !important;
 }
 div[data-testid="stExpander"] summary * {
@@ -623,34 +623,43 @@ else:
         st.header("保存済み測定履歴")
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
-                col_h1, col_h2 = st.columns([7, 3])
-                with col_h1:
-                    with st.expander(f"{hist['日時']} | {hist['現場名']} ({hist['工事件名']}) [推定水量: {hist['推定単位水量(kg/m3)']}kg/m3]"):
+                st.markdown(f"""
+                <div style="background-color: #1e293b; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #3b82f6;">
+                    <div style="color: #ffffff; font-weight: bold; font-size: 15px; margin-bottom: 4px;">
+                        {hist['日時']} | {hist['現場名']} ({hist['工事件名']}) [推定水量: {hist['推定単位水量(kg/m3)']}kg/m3]
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                with st.expander(f"📋 詳細情報を見る (No.{idx+1})", expanded=False):
+                    col_det1, col_det2 = st.columns([7, 3])
+                    with col_det1:
+                        st.write(f"- **日付**: {hist['日付']}")
+                        st.write(f"- **日時**: {hist['日時']}")
                         st.write(f"- **現場名**: {hist['現場名']}")
                         st.write(f"- **工事件名**: {hist['工事件名']}")
-                        st.write(f"- プラント: {hist['プラント']} ({hist['配合']})")
-                        st.write(f"- 設計単位水量: {hist['設計単位水量']} kg/m³")
-                        st.write(f"- 測定空気量: {hist['測定空気量(%)']}%")
-                with col_h2:
-                    confirm_key = f"confirm_del_{idx}"
-                    if confirm_key not in st.session_state:
-                        st.session_state[confirm_key] = False
-                    
-                    if not st.session_state[confirm_key]:
-                        if st.button("🗑️ 削除", key=f"del_btn_{idx}", use_container_width=True):
-                            st.session_state[confirm_key] = True
-                            st.rerun()
-                    else:
-                        st.warning("本当に削除しますか？")
-                        col_yes, col_no = st.columns(2)
-                        with col_yes:
-                            if st.button("はい", key=f"yes_del_{idx}", use_container_width=True):
+                        st.write(f"- **プラント・配合**: {hist['プラント']} ({hist['配合']})")
+                        st.write(f"- **設計単位水量**: {hist['設計単位水量']} kg/m³")
+                        st.write(f"- **推定単位水量**: {hist['推定単位水量(kg/m3.5' if '推定単位水量(kg/m3)' in hist else hist.get('推定単位水量(kg/m3)', 0))} kg/m³")
+                        st.write(f"- **測定空気量**: {hist['測定空気量(%)']}%")
+                    with col_det2:
+                        st.markdown("<div style='font-weight:bold; color:#000000; margin-bottom:5px;'>操作</div>", unsafe_allow_html=True)
+                        confirm_key = f"confirm_del_{idx}"
+                        if confirm_key not in st.session_state:
+                            st.session_state[confirm_key] = False
+                        
+                        if not st.session_state[confirm_key]:
+                            if st.button("🗑️ 削除", key=f"del_btn_{idx}", use_container_width=True):
+                                st.session_state[confirm_key] = True
+                                st.rerun()
+                        else:
+                            st.warning("本当に削除しますか？")
+                            if st.button("はい、削除する", key=f"yes_del_{idx}", type="primary", use_container_width=True):
                                 st.session_state.history.pop(idx)
                                 save_history_store()
                                 del st.session_state[confirm_key]
                                 st.success("削除しました！")
                                 st.rerun()
-                        with col_no:
                             if st.button("いいえ", key=f"no_del_{idx}", use_container_width=True):
                                 st.session_state[confirm_key] = False
                                 st.rerun()
