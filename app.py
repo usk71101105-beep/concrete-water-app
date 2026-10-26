@@ -591,24 +591,33 @@ else:
             st.session_state.meas_inspector_input = inspector_name
             
             plant_options = {f"[{p.get('id', idx)}]{p['plant_name']} : {p['mix_name']}": p for idx, p in enumerate(st.session_state.plants)}
-            default_index = 0
-            for idx, (k, p) in enumerate(plant_options.items()):
-                if p.get('id') == st.session_state.active_plant_id:
-                    default_index = idx
+            plant_keys_list = list(plant_options.keys())
+            
+            default_plant_key = plant_keys_list[0]
+            for k in plant_keys_list:
+                if plant_options[k].get('id') == st.session_state.get('active_plant_id', 1):
+                    default_plant_key = k
                     break
-                    
-            selected_plant_key = st.selectbox("プラント・配合選択", list(plant_options.keys()), index=default_index, key="measurement_plant_select")
+            if "measurement_plant_select" not in st.session_state or st.session_state.measurement_plant_select not in plant_keys_list:
+                st.session_state.measurement_plant_select = default_plant_key
+
+            selected_plant_key = st.selectbox("プラント・配合選択", plant_keys_list, key="measurement_plant_select")
             plant = plant_options[selected_plant_key]
             st.session_state.active_plant_id = plant.get('id')
             
             meter_options = {f"{m['meter_name']} (校正: {m.get('calibration_date', '未設定')})": m for m in st.session_state.air_meters}
+            meter_keys_list = list(meter_options.keys())
+            
+            default_meter_key = meter_keys_list[0]
             current_meas_meter = st.session_state.get("meas_meter_name", default_meter_name)
-            meter_default_idx = 0
-            for idx, (k, m_obj) in enumerate(meter_options.items()):
-                if m_obj.get('meter_name') == current_meas_meter:
-                    meter_default_idx = idx
+            for k in meter_keys_list:
+                if meter_options[k].get('meter_name') == current_meas_meter:
+                    default_meter_key = k
                     break
-            selected_meter_key = st.selectbox("使用エアメーター選択", list(meter_options.keys()), index=meter_default_idx, key="measurement_meter_select")
+            if "measurement_meter_select" not in st.session_state or st.session_state.measurement_meter_select not in meter_keys_list:
+                st.session_state.measurement_meter_select = default_meter_key
+
+            selected_meter_key = st.selectbox("使用エアメーター選択", meter_keys_list, key="measurement_meter_select")
             meter = meter_options[selected_meter_key]
             
             st.session_state.meas_container_vol = meter['container_volume']
