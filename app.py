@@ -601,7 +601,18 @@ else:
             if "measurement_plant_select" not in st.session_state or st.session_state.measurement_plant_select not in plant_keys_list:
                 st.session_state.measurement_plant_select = default_plant_key
 
-            selected_plant_key = st.selectbox("プラント・配合選択", plant_keys_list, key="measurement_plant_select")
+            def on_plant_change():
+                sel_key = st.session_state.get("measurement_plant_select")
+                sel_p = plant_options.get(sel_key)
+                if sel_p:
+                    st.session_state.active_plant_id = sel_p.get('id', 1)
+                    save_device_settings({
+                        "inspector_name": st.session_state.get("meas_inspector_input", default_inspector),
+                        "active_plant_id": st.session_state.active_plant_id,
+                        "meter_name": st.session_state.get("meas_meter_name", default_meter_name)
+                    })
+
+            selected_plant_key = st.selectbox("プラント・配合選択", plant_keys_list, key="measurement_plant_select", on_change=on_plant_change)
             plant = plant_options[selected_plant_key]
             st.session_state.active_plant_id = plant.get('id')
             
@@ -617,7 +628,20 @@ else:
             if "measurement_meter_select" not in st.session_state or st.session_state.measurement_meter_select not in meter_keys_list:
                 st.session_state.measurement_meter_select = default_meter_key
 
-            selected_meter_key = st.selectbox("使用エアメーター選択", meter_keys_list, key="measurement_meter_select")
+            def on_meter_change():
+                sel_m_key = st.session_state.get("measurement_meter_select")
+                sel_m = meter_options.get(sel_m_key)
+                if sel_m:
+                    st.session_state.meas_container_vol = sel_m.get('container_volume', 7000)
+                    st.session_state.meas_total_mass = sel_m.get('total_mass', 4250)
+                    st.session_state.meas_meter_name = sel_m.get('meter_name', '')
+                    save_device_settings({
+                        "inspector_name": st.session_state.get("meas_inspector_input", default_inspector),
+                        "active_plant_id": st.session_state.get("active_plant_id", 1),
+                        "meter_name": st.session_state.meas_meter_name
+                    })
+
+            selected_meter_key = st.selectbox("使用エアメーター選択", meter_keys_list, key="measurement_meter_select", on_change=on_meter_change)
             meter = meter_options[selected_meter_key]
             
             st.session_state.meas_container_vol = meter['container_volume']
