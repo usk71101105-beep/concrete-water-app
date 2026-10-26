@@ -205,64 +205,118 @@ if active_tab == "測定":
 
 elif active_tab == "プラント":
     st.header("プラント・配合マスタ登録（自由入力）")
-    with st.form("plant_reg"):
-        p_name = st.text_input("プラント名", value="A工場")
+    
+    # フォーム（st.form）を廃止し、通常の入力＆ボタンにすることでEnterによる勝手な登録を防ぐ
+    p_name = st.text_input("プラント名", value="A工場", key="reg_p_name")
+    
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        n_str = st.text_input("呼び強度", value="24", key="reg_n_str")
+        slump = st.number_input("スランプ (cm)", value=18.0, step=1.0, key="reg_slump")
+    with col_p2:
+        max_agg = st.selectbox("粗骨材最大寸法 (mm)", [20, 25, 40], key="reg_max_agg")
         
-        col_p1, col_p2 = st.columns(2)
-        with col_p1:
-            n_str = st.text_input("呼び強度", value="24")
-            slump = st.number_input("スランプ (cm)", value=18.0, step=1.0)
-        with col_p2:
-            max_agg = st.selectbox("粗骨材最大寸法 (mm)", [20, 25, 40])
-            
-        c_type = st.selectbox("生コンの種類", ["N (普通)", "H (早強)", "M (中庸熱)", "BB (高炉B種)"])
+    c_type = st.selectbox("生コンの種類", ["N (普通)", "H (早強)", "M (中庸熱)", "BB (高炉B種)"], key="reg_c_type")
+    
+    c_code = c_type.split()[0]
+    slump_val = int(slump) if slump.is_integer() else slump
+    auto_mix_name = f"{n_str}-{slump_val}-{max_agg}-{c_code}"
+    
+    m_name = st.text_input("配合（自動生成・変更可能）", value=auto_mix_name, key="reg_m_name")
         
-        c_code = c_type.split()[0]
-        slump_val = int(slump) if slump.is_integer() else slump
-        auto_mix_name = f"{n_str}-{slump_val}-{max_agg}-{c_code}"
-        
-        m_name = st.text_input("配合（自動生成・変更可能）", value=auto_mix_name)
-            
-        st.subheader("配合計画書の数値（1m³当り）")
-        w_d = st.number_input("① 水 (kg)", value=165.0, step=0.5)
-        c_val = st.number_input("② セメント (kg)", value=300.0, step=1.0)
-        s_val = st.number_input("③ 細骨材 合計 (kg)", value=780.0, step=1.0)
-        g_val = st.number_input("④ 粗骨材 合計 (kg)", value=950.0, step=1.0)
-        
-        if st.form_submit_button("この配合を登録する"):
-            new_id = max([p.get('id', 0) for p in st.session_state.plants], default=0) + 1
-            st.session_state.plants.append({
-                "id": new_id,
-                "plant_name": p_name, 
-                "mix_name": m_name, 
-                "nominal_strength": n_str,
-                "slump": slump, 
-                "max_aggregate": max_agg, 
-                "concrete_type": c_type,
-                "w_design": w_d, 
-                "c": c_val, 
-                "s": s_val, 
-                "g": g_val
-            })
-            save_master()
-            st.success(f"配合「{m_name} ({p_name})」を登録しました！")
+    st.subheader("配合計画書の数値（1m³当り）")
+    w_d = st.number_input("① 水 (kg)", value=165.0, step=0.5, key="reg_w_d")
+    c_val = st.number_input("② セメント (kg)", value=300.0, step=1.0, key="reg_c_val")
+    s_val = st.number_input("③ 細骨材 合計 (kg)", value=780.0, step=1.0, key="reg_s_val")
+    g_val = st.number_input("④ 粗骨材 合計 (kg)", value=950.0, step=1.0, key="reg_g_val")
+    
+    if st.button("この配合を登録する", type="primary", use_container_width=True):
+        new_id = max([p.get('id', 0) for p in st.session_state.plants], default=0) + 1
+        st.session_state.plants.append({
+            "id": new_id,
+            "plant_name": p_name, 
+            "mix_name": m_name, 
+            "nominal_strength": n_str,
+            "slump": slump, 
+            "max_aggregate": max_agg, 
+            "concrete_type": c_type,
+            "w_design": w_d, 
+            "c": c_val, 
+            "s": s_val, 
+            "g": g_val
+        })
+        save_master()
+        st.success(f"配合「{m_name} ({p_name})」を登録しました！")
+        st.rerun()
             
     if st.session_state.plants:
-        st.subheader("登録済み配合一覧")
-        df_plants = pd.DataFrame(st.session_state.plants)[['concrete_type', 'plant_name', 'mix_name', 'w_design', 'c', 's', 'g']]
-        st.dataframe(df_plants, use_container_width=True)
+        st.markdown("---")
+        st.subheader("登録済み配合の管理（修正・削除）")
         
-        st.subheader("登録済み配合のデータ確認・測定への反映")
+        for idx, p in enumerate(st.session_state.plants):
+            p_id = p.get('id', idx)
+            with st.expander(f"【{p['plant_name']}】 {p['mix_name']} (水: {p['w_design']}kg)"):
+                with st.form(key=f"edit_plant_form_{p_id}"):
+                    edit_p_name = st.text_input("プラント名", value=p['plant_name'], key=f"edit_p_name_{p_id}")
+                    edit_m_name = st.text_input("配合名", value=p['mix_name'], key=f"edit_m_name_{p_id}")
+                    
+                    ec1, ec2 = st.columns(2)
+                    with ec1:
+                        edit_n_str = st.text_input("呼び強度", value=str(p.get('nominal_strength', '24')), key=f"edit_n_str_{p_id}")
+                        edit_slump = st.number_input("スランプ (cm)", value=float(p.get('slump', 18.0)), step=1.0, key=f"edit_slump_{p_id}")
+                    with ec2:
+                        edit_max_agg = st.selectbox("粗骨材最大寸法 (mm)", [20, 25, 40], index=[20, 25, 40].index(int(p.get('max_aggregate', 20))) if int(p.get('max_aggregate', 20)) in [20, 25, 40] else 0, key=f"edit_max_agg_{p_id}")
+                        c_types_list = ["N (普通)", "H (早強)", "M (中庸熱)", "BB (高炉B種)"]
+                        c_type_idx = c_types_list.index(p.get('concrete_type', "N (普通)")) if p.get('concrete_type', "N (普通)") in c_types_list else 0
+                        edit_c_type = st.selectbox("生コンの種類", c_types_list, index=c_type_idx, key=f"edit_c_type_{p_id}")
+                    
+                    edit_w_d = st.number_input("① 水 (kg)", value=float(p['w_design']), step=0.5, key=f"edit_w_d_{p_id}")
+                    edit_c_val = st.number_input("② セメント (kg)", value=float(p['c']), step=1.0, key=f"edit_c_val_{p_id}")
+                    edit_s_val = st.number_input("③ 細骨材 合計 (kg)", value=float(p['s']), step=1.0, key=f"edit_s_val_{p_id}")
+                    edit_g_val = st.number_input("④ 粗骨材 合計 (kg)", value=float(p['g']), step=1.0, key=f"edit_g_val_{p_id}")
+                    
+                    submitted_update = st.form_submit_button("この内容で修正を保存する", type="primary")
+                    if submitted_update:
+                        st.session_state.plants[idx] = {
+                            "id": p_id,
+                            "plant_name": edit_p_name,
+                            "mix_name": edit_m_name,
+                            "nominal_strength": edit_n_str,
+                            "slump": edit_slump,
+                            "max_aggregate": edit_max_agg,
+                            "concrete_type": edit_c_type,
+                            "w_design": edit_w_d,
+                            "c": edit_c_val,
+                            "s": edit_s_val,
+                            "g": edit_g_val
+                        }
+                        save_master()
+                        st.success("プラント情報を更新しました！")
+                        st.rerun()
+
+                if st.button("このプラントを削除する", key=f"del_plant_{p_id}", type="secondary"):
+                    st.session_state.plants.pop(idx)
+                    save_master()
+                    st.warning("プラントを削除しました。")
+                    st.rerun()
+                    
+        st.markdown("---")
         ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{p['w_design']}kg)": p for p in st.session_state.plants}
-        selected_ref_key = st.selectbox("確認・反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
+        selected_ref_key = st.selectbox("今回の測定に反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
         ref_plant = ref_options[selected_ref_key]
         
-        if st.button("この配合を今回の測定に反映する", type="primary"):
+        if st.button("選択した配合を今回の測定に反映する", type="primary"):
             st.session_state.active_plant_id = ref_plant.get('id')
             st.session_state.current_tab = "測定"
+            components.html("""
+                <script>
+                    window.parent.scrollTo({top: 0, behavior: 'instant'});
+                    window.parent.scrollTo({top: 0, behavior: 'instant'});
+                </script>
+            """, height=0)
             st.rerun()
             
-        if st.button("プラント登録をリセット"):
+        if st.button("プラント登録をすべてリセット"):
             st.session_state.plants = []
             save_master()
             st.rerun()
@@ -376,7 +430,7 @@ elif active_tab == "データ管理":
             st.error(f"読み込みに失敗しました: {e}")
 
 # ==========================================
-# ナビゲーションメニューを一番下に配置 ＆ 確実なスクロールトップ処理
+# ナビゲーションメニューを一番下に配置 ＆ スクロールトップ処理
 # ==========================================
 st.markdown("---")
 st.markdown("### 📌 メニュー切り替え")
@@ -389,7 +443,7 @@ if selected_tab != active_tab:
         <script>
             function scrollToTop() {
                 window.parent.scrollTo({top: 0, behavior: 'instant'});
-                window.scrollTo({top: 0, behavior: 'instant'});
+                window.parent.scrollTo({top: 0, behavior: 'instant'});
                 const docEl = window.parent.document.documentElement;
                 if (docEl) docEl.scrollTop = 0;
                 const body = window.parent.document.body;
