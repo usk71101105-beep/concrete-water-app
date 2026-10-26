@@ -732,11 +732,15 @@ else:
             st.markdown("この端末専用のプロファイル名を設定することで、他の端末（PCとスマホ等）の履歴と完全に分離して保存・閲覧できます。")
             profile_input = st.text_input("現在の端末プロファイル名", value=st.session_state.device_user_id, key="profile_input_field")
             if st.button("プロファイル名を適用して切り替える", use_container_width=True):
-                st.session_state.device_user_id = profile_input.strip() if profile_input.strip() else "default_user"
-                st.query_params["user"] = st.session_state.device_user_id
-                st.success(f"プロファイル「{st.session_state.device_user_id}」に切り替えました！")
+                new_profile = profile_input.strip() if profile_input.strip() else "default_user"
+                st.session_state.device_user_id = new_profile
+                st.query_params["user"] = new_profile
+                st.success(f"プロファイル「{new_profile}」に切り替えました！")
                 st.rerun()
-            st.info(f"現在適用中のプロファイル: **{st.session_state.device_user_id}** (保存先ファイル: `history_store_{st.session_state.device_user_id}.json`)")
+            
+            st.info(f"現在適用中のプロファイル: **{current_user_profile}**\n(保存先ファイル: `history_store_{current_user_profile}.json`)")
+            
+            st.warning("⚠️ **【重要】再起動後に `default_user` に戻ってしまう場合**\nStreamlitアプリがサーバー側で再起動すると、一時メモリがリセットされます。\n**対策:** プロファイルを設定した状態のブラウザのURL（末尾に `?user=あなたのお名前` が付いたURL）を**お使いのスマホのホーム画面に追加**するか、**ブックマーク（お気に入り）に登録**して、そのURLからアクセスするようにしてください。次回から自動でこのプロファイルで起動します！")
 
         st.markdown("登録したプラント情報や測定履歴データをファイルとして保存したり、復元することができます。")
         st.subheader("① プラント・メーター設定の保存")
