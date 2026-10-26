@@ -211,23 +211,16 @@ elif active_tab == "プラント":
         selected_ref_key = st.selectbox("今回の測定に反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
         ref_plant = ref_options[selected_ref_key]
         
-        col_ref1, col_ref2 = st.columns(2)
-        with col_ref1:
-            if st.button("選択した配合を今回の測定に反映する", type="primary", use_container_width=True):
-                st.session_state.active_plant_id = ref_plant.get('id')
-                st.session_state.current_tab = "測定"
-                components.html("""
-                    <script>
-                        window.parent.scrollTo({top: 0, behavior: 'instant'});
-                        window.scrollTo({top: 0, behavior: 'instant'});
-                    </script>
-                """, height=0)
-                st.rerun()
-        with col_ref2:
-            if st.button("プラント登録をすべてリセット", use_container_width=True):
-                st.session_state.plants = []
-                save_master()
-                st.rerun()
+        if st.button("選択した配合を今回の測定に反映する", type="primary", use_container_width=True):
+            st.session_state.active_plant_id = ref_plant.get('id')
+            st.session_state.current_tab = "測定"
+            components.html("""
+                <script>
+                    window.parent.scrollTo({top: 0, behavior: 'instant'});
+                    window.scrollTo({top: 0, behavior: 'instant'});
+                </script>
+            """, height=0)
+            st.rerun()
 
     # 少し間を開ける
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -386,38 +379,45 @@ elif active_tab == "データ管理":
     st.header("設定データ・測定履歴の保存と読み込み")
     st.markdown("登録したプラント情報や測定履歴データをファイルとして保存したり、復元することができます。")
     
+    st.subheader("① プラント・メーター設定の保存（ファイル名カスタム可能）")
+    custom_master_name = st.text_input("保存するファイル名 (拡張子.jsonは不要)", value=f"concrete_master_settings_{datetime.now().strftime('%Y%m%d')}")
     master_backup = {
         "plants": st.session_state.plants,
         "air_meters": st.session_state.air_meters
     }
+    safe_master_filename = f"{custom_master_name.strip()}.json" if custom_master_name.strip() else f"concrete_master_settings_{datetime.now().strftime('%Y%m%d')}.json"
     st.download_button(
-        label="① プラント・メーター設定をファイルに保存 (JSON)",
+        label="📥 プラント・メーター設定ファイルをダウンロード",
         data=json.dumps(master_backup, ensure_ascii=False, indent=4),
-        file_name=f"concrete_master_settings_{datetime.now().strftime('%Y%m%d')}.json",
-        mime="application/json"
+        file_name=safe_master_filename,
+        mime="application/json",
+        type="primary"
     )
     
     st.markdown("---")
-    st.subheader("② 測定履歴データの保存（ファイル名：日付_現場名_工事件名）")
+    st.subheader("② 測定履歴データの保存（ファイル名カスタム可能）")
     if st.session_state.history:
         for i, hist in enumerate(st.session_state.history):
             h_date = hist.get("日付", datetime.now().strftime("%Y%m%d"))
             h_site = hist.get("現場名", "現場")
             h_proj = hist.get("工事件名", "工事")
-            safe_filename = f"{h_date}_{h_site}_{h_proj}.json".replace("/", "_").replace(" ", "_")
+            default_hist_name = f"{h_date}_{h_site}_{h_proj}".replace("/", "_").replace(" ", "_")
+            
+            custom_hist_name = st.text_input(f"履歴 #{i+1} のファイル名", value=default_hist_name, key=f"cust_hist_name_{i}")
+            safe_hist_filename = f"{custom_hist_name.strip()}.json" if custom_hist_name.strip() else f"{default_hist_name}.json"
             
             single_history_json = json.dumps([hist], ensure_ascii=False, indent=4)
             st.download_button(
                 label=f"📁 保存: {h_date} / {h_site} ({h_proj})",
                 data=single_history_json,
-                file_name=safe_filename,
+                file_name=safe_hist_filename,
                 mime="application/json",
                 key=f"dl_hist_{i}"
             )
+            st.markdown("---")
     else:
         st.info("保存できる測定履歴がありません。")
         
-    st.markdown("---")
     st.subheader("③ 保存したデータの読み込み（復元）")
     uploaded_file = st.file_uploader("保存したファイル (.json) を選択", type=["json"], key="restore_uploader")
     if uploaded_file is not None:
