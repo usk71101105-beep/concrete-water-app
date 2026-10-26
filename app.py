@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# カスタムCSS：黄色のボタンの文字およびエクスパンダーの文字を白に設定
+# カスタムCSS：すべてのテキストやエクスパンダー、ラベルを白や指定色に確実に設定
 st.markdown("""
 <style>
 /* 全体の背景とレイアウトを画像風のグレーに調整 */
@@ -37,20 +37,27 @@ h3, p, label {
     background-color: #ca8a04 !important;
     color: #ffffff !important;
 }
+/* エクスパンダー全体のデザインと中の文字をすべて白に強制 */
 div[data-testid="stExpander"] details {
-    border: 2px solid #3b82f6;
-    border-radius: 12px;
-    background-color: #1e293b;
-    margin-top: 40px;
-    margin-bottom: 30px;
+    border: 2px solid #3b82f6 !important;
+    border-radius: 12px !important;
+    background-color: #1e293b !important;
+    margin-top: 40px !important;
+    margin-bottom: 30px !important;
 }
 div[data-testid="stExpander"] summary {
     font-size: 18px !important;
     font-weight: bold !important;
     color: #ffffff !important;
     padding: 12px !important;
+    background-color: #1e293b !important;
 }
-div[data-testid="stExpander"] summary span {
+div[data-testid="stExpander"] summary * {
+    color: #ffffff !important;
+}
+div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] p,
+div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] span,
+div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] label {
     color: #ffffff !important;
 }
 </style>
