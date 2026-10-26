@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 import json
 import os
 import streamlit.components.v1 as components
@@ -9,6 +10,13 @@ st.set_page_config(
     page_title="生コン単位水量推定試験",
     layout="centered"
 )
+
+# 日本時間の現在時刻を取得する関数
+def get_japan_now():
+    return datetime.now(ZoneInfo("Asia/Tokyo"))
+
+def get_japan_today():
+    return get_japan_now().date()
 
 # カスタムCSS：すべてのテキストやボタン、エクスパンダーの文字を確実に白色に設定
 st.markdown("""
@@ -326,8 +334,9 @@ if st.session_state.show_exact_result_view:
                 st.rerun()
         with col_b2:
             if st.button("💾 この結果を保存", type="primary", use_container_width=True):
-                record_date_str = datetime.now().strftime("%Y%m%d")
-                record_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                now_jp = get_japan_now()
+                record_date_str = now_jp.strftime("%Y%m%d")
+                record_time = now_jp.strftime("%Y-%m-%d %H:%M")
                 new_record = {
                     "日付": record_date_str,
                     "日時": record_time,
@@ -507,7 +516,7 @@ else:
             m_name = st.text_input("エアメーター識別名", value="C13-WP776185XT")
             c_vol = st.number_input("⑩ 下容器容積 (cc)", value=7000.0, step=1.0)
             t_mass = st.number_input("⑪ 蓋を含めた全容器質量 (g)", value=4250.0, step=1.0)
-            cal_date = st.date_input("キャリブレーション日（校正日）", value=date.today())
+            cal_date = st.date_input("キャリブレーション日（校正日）", value=get_japan_today())
             
             if st.form_submit_button("エアメーターを登録する"):
                 new_m_id = max([m.get('id', 0) for m in st.session_state.air_meters], default=0) + 1
@@ -537,7 +546,7 @@ else:
                         try:
                             default_cal_dt = datetime.strptime(m.get('calibration_date', '2026-04-01'), "%Y-%m-%d").date()
                         except Exception:
-                            default_cal_dt = date.today()
+                            default_cal_dt = get_japan_today()
                         edit_cal_date = st.date_input("キャリブレーション日（校正日）", value=default_cal_dt, key=f"edit_cal_date_{m_id}")
                         
                         if st.form_submit_button("この内容で修正を保存する", type="primary"):
@@ -572,7 +581,7 @@ else:
             st.download_button(
                 label="履歴CSVダウンロード",
                 data=csv_data,
-                file_name=f"concrete_quality_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
                 mime="text/csv"
             )
             if st.button("履歴をすべてクリア"):
@@ -586,12 +595,12 @@ else:
         st.header("設定データ・測定履歴の保存と読み込み")
         st.markdown("登録したプラント情報や測定履歴データをファイルとして保存したり、復元することができます。")
         st.subheader("① プラント・メーター設定の保存")
-        custom_master_name = st.text_input("保存するファイル名 (拡張子.jsonは不要)", value=f"concrete_master_settings_{datetime.now().strftime('%Y%m%d')}")
+        custom_master_name = st.text_input("保存するファイル名 (拡張子.jsonは不要)", value=f"concrete_master_settings_{get_japan_now().strftime('%Y%m%d')}")
         master_backup = {
             "plants": st.session_state.plants,
             "air_meters": st.session_state.air_meters
         }
-        safe_master_filename = f"{custom_master_name.strip()}.json" if custom_master_name.strip() else f"concrete_master_settings_{datetime.now().strftime('%Y%m%d')}.json"
+        safe_master_filename = f"{custom_master_name.strip()}.json" if custom_master_name.strip() else f"concrete_master_settings_{get_japan_now().strftime('%Y%m%d')}.json"
         st.download_button(
             label="📥 プラント・メーター設定ファイルをダウンロード",
             data=json.dumps(master_backup, ensure_ascii=False, indent=4),
