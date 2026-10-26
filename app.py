@@ -60,7 +60,6 @@ h1 {
 h3, p, label {
     color: #000000 !important;
 }
-/* すべてのボタン（通常ボタン・フォーム送信ボタン・ダウンロードボタン・ファイルアップロードボタン等）の文字を白に強制 */
 .yellow-btn button, .stButton button, div[data-testid="stFormSubmitButton"] button, div[data-testid="stDownloadButton"] button, div[data-testid="stFileUploader"] button {
     background-color: #eab308 !important;
     color: #ffffff !important;
@@ -70,7 +69,6 @@ h3, p, label {
 .yellow-btn button *, .stButton button *, div[data-testid="stFormSubmitButton"] button *, div[data-testid="stDownloadButton"] button *, div[data-testid="stFileUploader"] button * {
     color: #ffffff !important;
 }
-/* ダウンロードボタン固有：背景色はそのままにして文字だけ白に */
 div[data-testid="stDownloadButton"] button {
     background-color: rgb(26, 31, 46) !important;
     color: #ffffff !important;
@@ -78,20 +76,11 @@ div[data-testid="stDownloadButton"] button {
 div[data-testid="stDownloadButton"] button * {
     color: #ffffff !important;
 }
-div[data-testid="stDownloadButton"] button:hover {
-    background-color: rgb(30, 41, 59) !important;
-    color: #ffffff !important;
-}
-/* ファイルアップロードボタン固有：背景色はそのままにして文字だけ白に */
 div[data-testid="stFileUploader"] button {
     background-color: rgb(26, 31, 46) !important;
     color: #ffffff !important;
 }
 div[data-testid="stFileUploader"] button * {
-    color: #ffffff !important;
-}
-div[data-testid="stFileUploader"] button:hover {
-    background-color: rgb(51, 65, 85) !important;
     color: #ffffff !important;
 }
 .yellow-btn button:hover, .stButton button:hover, div[data-testid="stFormSubmitButton"] button:hover {
@@ -196,7 +185,6 @@ def save_history_store():
 
 active_tab = st.session_state.current_tab
 
-# --- 画像完全一致の結果画面（中央寄せ・空気量以外は小数点以下省略） ---
 if st.session_state.show_exact_result_view:
     plant_options = {f"{p['plant_name']} : {p['mix_name']}": p for p in st.session_state.plants}
     plant = plant_options.get(list(plant_options.keys())[0])
@@ -406,7 +394,6 @@ if st.session_state.show_exact_result_view:
                     "推定単位水量(kg/m3)": int(round(estimated_water)),
                     "測定空気量(%)": measured_air
                 }
-                # ローカル履歴に追加しつつ、スプレッドシートへ送信
                 st.session_state.history.append(new_record)
                 save_history_store()
                 success_sheet = send_to_spreadsheet(new_record)
@@ -416,7 +403,6 @@ if st.session_state.show_exact_result_view:
                     st.success("結果をアプリ内に保存しました！（※スプレッドシートへの送信に失敗しました）")
 
 else:
-    # --- 通常の入力・操作画面 ---
     st.title("生コン単位水量推定試験")
     st.markdown('<div class="sub-title-center">土木研究所法〔無注水法〕</div>', unsafe_allow_html=True)
 
@@ -637,7 +623,7 @@ else:
         st.header("保存済み測定履歴")
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
-                col_h1, col_h2 = st.columns([8, 2])
+                col_h1, col_h2 = st.columns([7, 3])
                 with col_h1:
                     with st.expander(f"{hist['日時']} | {hist['現場名']} ({hist['工事件名']}) [推定水量: {hist['推定単位水量(kg/m3)']}kg/m3]"):
                         st.write(f"- **現場名**: {hist['現場名']}")
@@ -646,12 +632,30 @@ else:
                         st.write(f"- 設計単位水量: {hist['設計単位水量']} kg/m³")
                         st.write(f"- 測定空気量: {hist['測定空気量(%)']}%")
                 with col_h2:
-                    if st.button("🗑️ 削除", key=f"del_hist_{idx}", use_container_width=True):
-                        st.session_state.history.pop(idx)
-                        save_history_store()
-                        st.success("指定した履歴を削除しました！")
-                        st.rerun()
+                    confirm_key = f"confirm_del_{idx}"
+                    if confirm_key not in st.session_state:
+                        st.session_state[confirm_key] = False
+                    
+                    if not st.session_state[confirm_key]:
+                        if st.button("🗑️ 削除", key=f"del_btn_{idx}", use_container_width=True):
+                            st.session_state[confirm_key] = True
+                            st.rerun()
+                    else:
+                        st.warning("本当に削除しますか？")
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("はい", key=f"yes_del_{idx}", use_container_width=True):
+                                st.session_state.history.pop(idx)
+                                save_history_store()
+                                del st.session_state[confirm_key]
+                                st.success("削除しました！")
+                                st.rerun()
+                        with col_no:
+                            if st.button("いいえ", key=f"no_del_{idx}", use_container_width=True):
+                                st.session_state[confirm_key] = False
+                                st.rerun()
 
+            st.markdown("<br>", unsafe_allow_html=True)
             df_history_export = pd.DataFrame(st.session_state.history)
             csv_data = df_history_export.to_csv(index=False).encode('utf-8-sig')
             st.download_button(
