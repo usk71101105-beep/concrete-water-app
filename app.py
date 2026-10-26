@@ -598,11 +598,11 @@ else:
                 if plant_options[k].get('id') == st.session_state.get('active_plant_id', 1):
                     default_plant_key = k
                     break
-            if "measurement_plant_select" not in st.session_state or st.session_state.measurement_plant_select not in plant_keys_list:
-                st.session_state.measurement_plant_select = default_plant_key
+            if "measurement_plant_radio" not in st.session_state or st.session_state.measurement_plant_radio not in plant_keys_list:
+                st.session_state.measurement_plant_radio = default_plant_key
 
             def on_plant_change():
-                sel_key = st.session_state.get("measurement_plant_select")
+                sel_key = st.session_state.get("measurement_plant_radio")
                 sel_p = plant_options.get(sel_key)
                 if sel_p:
                     st.session_state.active_plant_id = sel_p.get('id', 1)
@@ -612,7 +612,7 @@ else:
                         "meter_name": st.session_state.get("meas_meter_name", default_meter_name)
                     })
 
-            selected_plant_key = st.selectbox("プラント・配合選択", plant_keys_list, key="measurement_plant_select", on_change=on_plant_change)
+            selected_plant_key = st.radio("プラント・配合選択", plant_keys_list, key="measurement_plant_radio", on_change=on_plant_change)
             plant = plant_options[selected_plant_key]
             st.session_state.active_plant_id = plant.get('id')
             
@@ -625,11 +625,11 @@ else:
                 if meter_options[k].get('meter_name') == current_meas_meter:
                     default_meter_key = k
                     break
-            if "measurement_meter_select" not in st.session_state or st.session_state.measurement_meter_select not in meter_keys_list:
-                st.session_state.measurement_meter_select = default_meter_key
+            if "measurement_meter_radio" not in st.session_state or st.session_state.measurement_meter_radio not in meter_keys_list:
+                st.session_state.measurement_meter_radio = default_meter_key
 
             def on_meter_change():
-                sel_m_key = st.session_state.get("measurement_meter_select")
+                sel_m_key = st.session_state.get("measurement_meter_radio")
                 sel_m = meter_options.get(sel_m_key)
                 if sel_m:
                     st.session_state.meas_container_vol = sel_m.get('container_volume', 7000)
@@ -641,7 +641,7 @@ else:
                         "meter_name": st.session_state.meas_meter_name
                     })
 
-            selected_meter_key = st.selectbox("使用エアメーター選択", meter_keys_list, key="measurement_meter_select", on_change=on_meter_change)
+            selected_meter_key = st.radio("使用エアメーター選択", meter_keys_list, key="measurement_meter_radio", on_change=on_meter_change)
             meter = meter_options[selected_meter_key]
             
             st.session_state.meas_container_vol = meter['container_volume']
