@@ -166,6 +166,19 @@ div[style*="position:fixed"] {
 
 </style>
 
+<script>
+// Streamlitのバッジや不要なフローティング要素をDOMから完全に削除するスクリプト
+setInterval(() => {
+    const unwanted = document.querySelectorAll('div[class*="viewerBadge"], .styles_viewerBadge__1yG5_, [data-testid="stToolbar"], div[style*="position: fixed"]');
+    unwanted.forEach(el => {
+        if (el && el.parentNode) {
+            el.remove();
+        }
+    });
+}, 300);
+</script>
+
+
 
 """, unsafe_allow_html=True)
 
