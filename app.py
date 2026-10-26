@@ -141,6 +141,20 @@ div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] span,
 div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] label {
     color: #ffffff !important;
 }
+
+/* 画面右下に固定配置されるStreamlitのバッジやボタンを強制非表示にする */
+div[style*="position: fixed"][style*="bottom"],
+div[style*="position:fixed"][style*="bottom"] {
+    display: none !important;
+}
+a[href*="streamlit.io"],
+a[href*="streamlit.cloud"] {
+    display: none !important;
+}
+iframe[src*="streamlit"] {
+    display: none !important;
+}
+
 </style>
 
 
