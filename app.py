@@ -707,6 +707,8 @@ else:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<div class="yellow-btn">', unsafe_allow_html=True)
         if st.button("🌟 単位水量推定結果", use_container_width=True):
+            st.session_state.meas_site_name_input = site_name
+            st.session_state.meas_project_name_input = project_name
             st.session_state.show_exact_result_view = True
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
