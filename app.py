@@ -167,6 +167,41 @@ div[style*="position:fixed"] {
 </style>
 
 <script>
+// Streamlitのバッジや不要な要素をシャドウDOMも含めて徹底的に根絶するスクリプト
+function removeBadges() {
+    // 通常のDOMから検索
+    const selectors = [
+        '[class*="viewerBadge"]',
+        '[class*="styles_viewerBadge"]',
+        '[data-testid="stToolbar"]',
+        '[data-testid="stDecoration"]',
+        'a[href*="streamlit.io"]',
+        'footer'
+    ];
+    
+    selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => el.remove());
+    });
+
+    // すべてのiframeや要素を走査して「Streamlit」や「Hosted with」が含まれるものを削除
+    const allEls = document.querySelectorAll('div, a, span, button');
+    allEls.forEach(el => {
+        if (el.innerText && (el.innerText.includes('Streamlit') || el.innerText.includes('Hosted with'))) {
+            // ただしアプリ内の重要なテキストを巻き込まないよう、position:fixedのものに限定
+            const pos = window.getComputedStyle(el).position;
+            if (pos === 'fixed' || pos === 'absolute') {
+                el.remove();
+            }
+        }
+    });
+}
+
+setInterval(removeBadges, 200);
+window.addEventListener('load', removeBadges);
+</script>
+
+
+<script>
 // 画面右下のバッジ領域を完全にカバーする透明なシールド（盾）を挿入してタッチをブロックする
 window.addEventListener('DOMContentLoaded', () => {
     createShield();
