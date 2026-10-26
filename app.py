@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import json
-import base64
-import io
 import os
 
 st.set_page_config(
@@ -121,11 +119,11 @@ def save_history_store():
 st.title("生コン単位水量推定試験")
 st.markdown("##### 土木研究所法〔無注水法〕")
 
-# タブ構成
+# タブ構成（写真関連を省いたシンプルな構成）
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["測定", "プラント", "メーター", "履歴", "データ管理"])
 
 # ==========================================
-# Tab 1: 現場測定 ＆ 写真撮影 ＆ チェックリスト
+# Tab 1: 現場測定 ＆ チェックリスト
 # ==========================================
 with tab1:
     st.header("現場測定 & 記録入力")
@@ -189,25 +187,6 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
 
-        captured_photos_base64 = {}
-        with st.expander("写真の撮影・8項目", expanded=False):
-            photo_labels = {
-                "blackboard": "1. 黒板（工事看板・条件）",
-                "slump": "2. スランプ試験状況",
-                "air_meter": "3. エアメーター測定状況",
-                "weight": "4. 重量測定（計量器）",
-                "temp": "5. 生コン温度測定",
-                "chloride": "6. 塩化物測定",
-                "overall": "7. 試験全体風景",
-                "site_scenery": "8. 現場風景"
-            }
-            for key, label in photo_labels.items():
-                p_file = st.file_uploader(label, type=["jpg", "jpeg", "png"], key=f"photo_{key}")
-                if p_file is not None:
-                    captured_photos_base64[key] = base64.b64encode(p_file.getvalue()).decode('utf-8')
-                else:
-                    captured_photos_base64[key] = None
-
         st.subheader("記録忘れ防止チェックリスト")
         c1, c2 = st.columns(2)
         with c1:
@@ -218,17 +197,14 @@ with tab1:
         with c2:
             chk_mass = st.checkbox("容器質量・容積確認OKか")
             chk_blackboard = st.checkbox("黒板記載内容OKか")
-            chk_site = st.checkbox("現場風景の撮影OKか")
+            chk_site = st.checkbox("現場風景の確認OKか")
             chk_clean = st.checkbox("器具の清掃完了か")
             
         all_checked = all([chk_sample, chk_temp, chk_chloride, chk_slump, chk_mass, chk_blackboard, chk_site, chk_clean])
-        photos_taken_count = sum(1 for p in captured_photos_base64.values() if p is not None)
-        
         if not all_checked:
             st.warning("チェックリストに未完了の項目があります。")
-        st.info(f"写真撮影状況: {photos_taken_count} / 8枚")
 
-        if st.button("本日の測定結果・写真を一括保存", type="primary", use_container_width=True):
+        if st.button("本日の測定結果を一括保存", type="primary", use_container_width=True):
             record_date_str = datetime.now().strftime("%Y%m%d")
             record_time = datetime.now().strftime("%Y-%m-%d %H:%M")
             new_record = {
@@ -242,9 +218,7 @@ with tab1:
                 "設計単位水量": plant['w_design'],
                 "推定単位水量(kg/m3)": round(estimated_water, 1),
                 "測定空気量(%)": measured_air,
-                "チェック状態": "完了" if all_checked else "未完了",
-                "写真枚数": f"{photos_taken_count}/8枚",
-                "photos_b64": captured_photos_base64
+                "チェック状態": "完了" if all_checked else "未完了"
             }
             st.session_state.history.append(new_record)
             save_history_store()
@@ -307,14 +281,6 @@ with tab2:
         selected_ref_key = st.selectbox("確認・反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
         ref_plant = ref_options[selected_ref_key]
         
-        with st.expander("選択中の配合計画書データ（確認）", expanded=True):
-            st.write(f"- 生コンの種類: {ref_plant['concrete_type']}")
-            st.write(f"- 呼び強度: {ref_plant['nominal_strength']} / スランプ: {ref_plant['slump']}cm / 粗骨材最大径: {ref_plant['max_aggregate']}mm")
-            st.write(f"- ① 設計単位水量 (W): **{ref_plant['w_design']} kg/m³**")
-            st.write(f"- ② セメント (C): {ref_plant['c']} kg/m³")
-            st.write(f"- ③ 細骨材合計 (S): {ref_plant['s']} kg/m³")
-            st.write(f"- ④ 粗骨材合計 (G): {ref_plant['g']} kg/m³")
-            
         if st.button("この配合を今回の測定に反映する", type="primary"):
             st.session_state.active_plant_id = ref_plant.get('id')
             st.success(f"「{ref_plant['plant_name']} : {ref_plant['mix_name']}」を今回の測定に反映しました！上部の「測定」タブに切り替えてください。")
@@ -364,16 +330,10 @@ with tab4:
                 st.write(f"- **工事件名**: {hist['工事件名']}")
                 st.write(f"- **生コン種類**: {hist['種類']} / プラント: {hist['プラント']} ({hist['配合']})")
                 st.write(f"- 設計単位水量: {hist['設計単位水量']} kg/m³")
+                st.write(f"- 測定空気量: {hist['測定空気量(%)']}%")
                 st.write(f"- チェックリスト: {hist['チェック状態']}")
-                st.write(f"- 撮影写真数: {hist['写真枚数']}")
                 
-                photos_b64 = hist.get("photos_b64", {})
-                for p_key, p_val in photos_b64.items():
-                    if p_val is not None:
-                        img_bytes = base64.b64decode(p_val)
-                        st.image(io.BytesIO(img_bytes), caption=f"[{p_key}]", width=250)
-                        
-        df_history_export = pd.DataFrame([{k: v for k, v in h.items() if k != "photos_b64"} for h in st.session_state.history])
+        df_history_export = pd.DataFrame(st.session_state.history)
         csv_data = df_history_export.to_csv(index=False).encode('utf-8-sig')
         st.download_button(
             label="履歴CSVダウンロード",
@@ -389,13 +349,12 @@ with tab4:
         st.info("保存された履歴はありません。")
 
 # ==========================================
-# Tab 5: データ管理（バックアップ・復元 ＆ ファイル保存）
+# Tab 5: データ管理
 # ==========================================
 with tab5:
     st.header("設定データ・測定履歴の保存と読み込み")
-    st.markdown("登録したプラント情報や、写真を含む測定履歴データをファイルとして保存（バックアップ・端末への保存）したり、復元することができます。")
+    st.markdown("登録したプラント情報や測定履歴データをファイルとして保存したり、復元することができます。")
     
-    # 1. マスター設定のバックアップ
     master_backup = {
         "plants": st.session_state.plants,
         "air_meters": st.session_state.air_meters
@@ -408,13 +367,12 @@ with tab5:
     )
     
     st.markdown("---")
-    st.subheader("② 測定履歴・写真データの保存（ファイル名：日付_現場名_工事件名）")
+    st.subheader("② 測定履歴データの保存（ファイル名：日付_現場名_工事件名）")
     if st.session_state.history:
         for i, hist in enumerate(st.session_state.history):
             h_date = hist.get("日付", datetime.now().strftime("%Y%m%d"))
             h_site = hist.get("現場名", "現場")
             h_proj = hist.get("工事件名", "工事")
-            # ファイル名を「日付_現場名_工事件名.json」に整形
             safe_filename = f"{h_date}_{h_site}_{h_proj}.json".replace("/", "_").replace(" ", "_")
             
             single_history_json = json.dumps([hist], ensure_ascii=False, indent=4)
@@ -434,16 +392,13 @@ with tab5:
     if uploaded_file is not None:
         try:
             content = json.load(uploaded_file)
-            # 履歴データ形式かマスター設定形式かを判定
             if isinstance(content, list):
-                # 履歴データ
                 for rec in content:
                     if rec not in st.session_state.history:
                         st.session_state.history.append(rec)
                 save_history_store()
                 st.success("測定履歴データを正常に読み込み（復元）しました！「履歴」タブから確認できます。")
             elif isinstance(content, dict) and "plants" in content:
-                # マスター設定
                 st.session_state.plants = content["plants"]
                 st.session_state.air_meters = content.get("air_meters", [])
                 save_master()
