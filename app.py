@@ -39,14 +39,38 @@ h1 {
 h3, p, label {
     color: #000000 !important;
 }
-/* すべてのボタン（通常ボタン・フォーム送信ボタン・プライマリボタン等）の背景を黄色、文字を白に強制 */
-.yellow-btn button, .stButton button, div[data-testid="stFormSubmitButton"] button {
+/* すべてのボタン（通常ボタン・フォーム送信ボタン・ダウンロードボタン・ファイルアップロードボタン等）の文字を白に強制 */
+.yellow-btn button, .stButton button, div[data-testid="stFormSubmitButton"] button, div[data-testid="stDownloadButton"] button, div[data-testid="stFileUploader"] button {
     background-color: #eab308 !important;
     color: #ffffff !important;
     font-weight: bold !important;
     border: none !important;
 }
-.yellow-btn button *, .stButton button *, div[data-testid="stFormSubmitButton"] button * {
+.yellow-btn button *, .stButton button *, div[data-testid="stFormSubmitButton"] button *, div[data-testid="stDownloadButton"] button *, div[data-testid="stFileUploader"] button * {
+    color: #ffffff !important;
+}
+/* ダウンロードボタン固有：背景色はそのままにして文字だけ白に */
+div[data-testid="stDownloadButton"] button {
+    background-color: rgb(26, 31, 46) !important;
+    color: #ffffff !important;
+}
+div[data-testid="stDownloadButton"] button * {
+    color: #ffffff !important;
+}
+div[data-testid="stDownloadButton"] button:hover {
+    background-color: rgb(30, 41, 59) !important;
+    color: #ffffff !important;
+}
+/* ファイルアップロードボタン固有：背景色はそのままにして文字だけ白に */
+div[data-testid="stFileUploader"] button {
+    background-color: rgb(26, 31, 46) !important;
+    color: #ffffff !important;
+}
+div[data-testid="stFileUploader"] button * {
+    color: #ffffff !important;
+}
+div[data-testid="stFileUploader"] button:hover {
+    background-color: rgb(51, 65, 85) !important;
     color: #ffffff !important;
 }
 .yellow-btn button:hover, .stButton button:hover, div[data-testid="stFormSubmitButton"] button:hover {
@@ -173,7 +197,7 @@ if st.session_state.show_exact_result_view:
     container_vol = float(st.session_state.get("meas_container_vol", 7000))
     total_mass = float(st.session_state.get("meas_total_mass", 4250))
     measured_mass = float(st.session_state.get("meas_measured_mass", 22875))
-    measured_air = st.session_state.get("meas_measured_air", 3.1) # 空気量は小数保持
+    measured_air = st.session_state.get("meas_measured_air", 3.1)
     
     bonezai_hosei = 0.0
     sample_air = measured_air - bonezai_hosei
