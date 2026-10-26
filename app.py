@@ -384,8 +384,8 @@ if st.session_state.show_exact_result_view:
                 new_record = {
                     "日付": record_date_str,
                     "日時": record_time,
-                    "現場名": st.session_state.get("meas_site_name", "〇〇現場"),
-                    "工事件名": st.session_state.get("meas_project_name", "〇〇工事"),
+                    "現場名": st.session_state.get("meas_site_name_input", "〇〇現場"),
+                    "工事件名": st.session_state.get("meas_project_name_input", "〇〇工事"),
                     "プラント": plant['plant_name'],
                     "配合": plant['mix_name'],
                     "設計単位水量": int(round(w_des)),
