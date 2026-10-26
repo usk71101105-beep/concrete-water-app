@@ -65,12 +65,8 @@ if "plants" not in st.session_state:
         st.session_state.plants = [
             {
                 "id": 1,
-                "plant_name": "A工場",
-                "mix_name": "24-18-20-N",
-                "nominal_strength": "24",
-                "slump": 18.0,
-                "max_aggregate": 20,
-                "concrete_type": "N (普通)",
+                "plant_name": "宇部府中",
+                "mix_name": "27-12-20-M",
                 "w_design": 165.0,
                 "c": 300.0,
                 "s": 780.0,
@@ -192,7 +188,6 @@ if active_tab == "測定":
                 "日時": record_time,
                 "現場名": site_name,
                 "工事件名": project_name,
-                "種類": plant['concrete_type'],
                 "プラント": plant['plant_name'],
                 "配合": plant['mix_name'],
                 "設計単位水量": plant['w_design'],
@@ -227,24 +222,10 @@ elif active_tab == "プラント":
     st.markdown("---")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    st.header("プラント・配合マスタ登録（自由入力）")
+    st.header("プラント・配合マスタ登録")
     
-    p_name = st.text_input("プラント名", value="A工場", key="reg_p_name")
-    
-    col_p1, col_p2 = st.columns(2)
-    with col_p1:
-        n_str = st.text_input("呼び強度", value="24", key="reg_n_str")
-        slump = st.number_input("スランプ (cm)", value=18.0, step=1.0, key="reg_slump")
-    with col_p2:
-        max_agg = st.selectbox("粗骨材最大寸法 (mm)", [20, 25, 40], key="reg_max_agg")
-        
-    c_type = st.selectbox("生コンの種類", ["N (普通)", "H (早強)", "M (中庸熱)", "BB (高炉B種)"], key="reg_c_type")
-    
-    c_code = c_type.split()[0]
-    slump_val = int(slump) if slump.is_integer() else slump
-    auto_mix_name = f"{n_str}-{slump_val}-{max_agg}-{c_code}"
-    
-    m_name = st.text_input("配合（自動生成・変更可能）", value=auto_mix_name, key="reg_m_name")
+    p_name = st.text_input("プラント名", value="宇部府中", key="reg_p_name")
+    m_name = st.text_input("配合名", value="27-12-20-M", key="reg_m_name")
         
     st.subheader("配合計画書の数値（1m³当り）")
     w_d = st.number_input("① 水 (kg)", value=165.0, step=0.5, key="reg_w_d")
@@ -258,10 +239,6 @@ elif active_tab == "プラント":
             "id": new_id,
             "plant_name": p_name, 
             "mix_name": m_name, 
-            "nominal_strength": n_str,
-            "slump": slump, 
-            "max_aggregate": max_agg, 
-            "concrete_type": c_type,
             "w_design": w_d, 
             "c": c_val, 
             "s": s_val, 
@@ -284,16 +261,6 @@ elif active_tab == "プラント":
                     edit_p_name = st.text_input("プラント名", value=p['plant_name'], key=f"edit_p_name_{p_id}")
                     edit_m_name = st.text_input("配合名", value=p['mix_name'], key=f"edit_m_name_{p_id}")
                     
-                    ec1, ec2 = st.columns(2)
-                    with ec1:
-                        edit_n_str = st.text_input("呼び強度", value=str(p.get('nominal_strength', '24')), key=f"edit_n_str_{p_id}")
-                        edit_slump = st.number_input("スランプ (cm)", value=float(p.get('slump', 18.0)), step=1.0, key=f"edit_slump_{p_id}")
-                    with ec2:
-                        edit_max_agg = st.selectbox("粗骨材最大寸法 (mm)", [20, 25, 40], index=[20, 25, 40].index(int(p.get('max_aggregate', 20))) if int(p.get('max_aggregate', 20)) in [20, 25, 40] else 0, key=f"edit_max_agg_{p_id}")
-                        c_types_list = ["N (普通)", "H (早強)", "M (中庸熱)", "BB (高炉B種)"]
-                        c_type_idx = c_types_list.index(p.get('concrete_type', "N (普通)")) if p.get('concrete_type', "N (普通)") in c_types_list else 0
-                        edit_c_type = st.selectbox("生コンの種類", c_types_list, index=c_type_idx, key=f"edit_c_type_{p_id}")
-                    
                     edit_w_d = st.number_input("① 水 (kg)", value=float(p['w_design']), step=0.5, key=f"edit_w_d_{p_id}")
                     edit_c_val = st.number_input("② セメント (kg)", value=float(p['c']), step=1.0, key=f"edit_c_val_{p_id}")
                     edit_s_val = st.number_input("③ 細骨材 合計 (kg)", value=float(p['s']), step=1.0, key=f"edit_s_val_{p_id}")
@@ -305,10 +272,6 @@ elif active_tab == "プラント":
                             "id": p_id,
                             "plant_name": edit_p_name,
                             "mix_name": edit_m_name,
-                            "nominal_strength": edit_n_str,
-                            "slump": edit_slump,
-                            "max_aggregate": edit_max_agg,
-                            "concrete_type": edit_c_type,
                             "w_design": edit_w_d,
                             "c": edit_c_val,
                             "s": edit_s_val,
@@ -356,7 +319,7 @@ elif active_tab == "履歴":
             with st.expander(f"{hist['日時']} | {hist['現場名']} ({hist['工事件名']}) [推定水量: {hist['推定単位水量(kg/m3)']}kg/m3]"):
                 st.write(f"- **現場名**: {hist['現場名']}")
                 st.write(f"- **工事件名**: {hist['工事件名']}")
-                st.write(f"- **生コン種類**: {hist['種類']} / プラント: {hist['プラント']} ({hist['配合']})")
+                st.write(f"- プラント: {hist['プラント']} ({hist['配合']})")
                 st.write(f"- 設計単位水量: {hist['設計単位水量']} kg/m³")
                 st.write(f"- 測定空気量: {hist['測定空気量(%)']}%")
                 
