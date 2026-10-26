@@ -476,64 +476,10 @@ else:
             """, unsafe_allow_html=True)
 
     elif active_tab == "プラント":
-        st.header("プラント配合の選択・切替")
-        if st.session_state.plants:
-            ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{int(round(float(p['w_design'])))}kg)": p for p in st.session_state.plants}
-            default_ref_index = 0
-            for idx, (k, p) in enumerate(ref_options.items()):
-                if p.get('id') == st.session_state.active_plant_id:
-                    default_ref_index = idx
-                    break
-
-            def on_ref_plant_change():
-                sel_key = st.session_state.ref_select_dropdown
-                chosen = ref_options.get(sel_key)
-                if chosen:
-                    st.session_state.active_plant_id = chosen.get('id')
-
-            selected_ref_key = st.selectbox(
-                "今回の測定に反映する配合を選択", 
-                list(ref_options.keys()), 
-                index=default_ref_index, 
-                key="ref_select_dropdown",
-                on_change=on_ref_plant_change
-            )
-            ref_plant = ref_options[selected_ref_key]
-            st.session_state.active_plant_id = ref_plant.get('id')
-            
-            if st.button("選択した配合を今回の測定に反映する", type="primary", use_container_width=True):
-                st.session_state.active_plant_id = ref_plant.get('id')
-                st.session_state.current_tab = "測定"
-                st.rerun()
-
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("---")
-        st.header("プラント・配合マスタ登録")
-        p_name = st.text_input("プラント名", value="中村建材", key="reg_p_name")
-        m_name = st.text_input("配合名", value="27-12-20-BB", key="reg_m_name")
-        w_d = st.number_input("① 水 (kg)", value=164.0, step=1.0, format="%d", key="reg_w_d")
-        c_val = st.number_input("② セメント (kg)", value=300.0, step=1.0, format="%d", key="reg_c_val")
-        s_val = st.number_input("③ 細骨材 合計 (kg)", value=780.0, step=1.0, format="%d", key="reg_s_val")
-        g_val = st.number_input("④ 粗骨材 合計 (kg)", value=950.0, step=1.0, format="%d", key="reg_g_val")
+        st.header("プラント・配合マスタ登録および一覧")
         
-        if st.button("この配合を登録する", type="primary", use_container_width=True):
-            new_id = max([p.get('id', 0) for p in st.session_state.plants], default=0) + 1
-            st.session_state.plants.append({
-                "id": new_id,
-                "plant_name": p_name, 
-                "mix_name": m_name, 
-                "w_design": int(round(w_d)), 
-                "c": int(round(c_val)), 
-                "s": int(round(s_val)), 
-                "g": int(round(g_val))
-            })
-            save_master()
-            st.success(f"配合「{m_name} ({p_name})」を登録しました！")
-            st.rerun()
-
+        # 登録済み配合の管理（修正・削除）を上に配置
         if st.session_state.plants:
-            st.markdown("<br><br>", unsafe_allow_html=True)
-            st.markdown("---")
             st.subheader("登録済み配合の管理（修正・削除）")
             for idx, p in enumerate(st.session_state.plants):
                 p_id = p.get('id', idx)
@@ -564,6 +510,31 @@ else:
                         save_master()
                         st.warning("プラントを削除しました。")
                         st.rerun()
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("---")
+        st.header("新規プラント・配合マスタ登録")
+        p_name = st.text_input("プラント名", value="中村建材", key="reg_p_name")
+        m_name = st.text_input("配合名", value="27-12-20-BB", key="reg_m_name")
+        w_d = st.number_input("① 水 (kg)", value=164.0, step=1.0, format="%d", key="reg_w_d")
+        c_val = st.number_input("② セメント (kg)", value=300.0, step=1.0, format="%d", key="reg_c_val")
+        s_val = st.number_input("③ 細骨材 合計 (kg)", value=780.0, step=1.0, format="%d", key="reg_s_val")
+        g_val = st.number_input("④ 粗骨材 合計 (kg)", value=950.0, step=1.0, format="%d", key="reg_g_val")
+        
+        if st.button("この配合を登録する", type="primary", use_container_width=True):
+            new_id = max([p.get('id', 0) for p in st.session_state.plants], default=0) + 1
+            st.session_state.plants.append({
+                "id": new_id,
+                "plant_name": p_name, 
+                "mix_name": m_name, 
+                "w_design": int(round(w_d)), 
+                "c": int(round(c_val)), 
+                "s": int(round(s_val)), 
+                "g": int(round(g_val))
+            })
+            save_master()
+            st.success(f"配合「{m_name} ({p_name})」を登録しました！")
+            st.rerun()
 
     elif active_tab == "メーター":
         st.header("エアメーター情報登録")
@@ -718,7 +689,7 @@ else:
                         if rec not in st.session_state.history:
                             st.session_state.history.append(rec)
                     save_history_store()
-                    st.success("測定履歴データを正常に読み込みました！")
+                    st.success("測定画面等で使用する履歴データを正常に読み込みました！")
                 elif isinstance(content, dict) and "plants" in content:
                     st.session_state.plants = content["plants"]
                     st.session_state.air_meters = content.get("air_meters", [])
