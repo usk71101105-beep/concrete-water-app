@@ -133,7 +133,7 @@ if active_tab == "測定":
                 default_index = idx
                 break
                 
-        selected_plant_key = st.selectbox("プラント・配合選択", list(plant_options.keys()), index=default_index)
+        selected_plant_key = st.selectbox("プラント・配合選択", list(plant_options.keys()), index=default_index, key="measurement_plant_select")
         plant = plant_options[selected_plant_key]
         st.session_state.active_plant_id = plant.get('id')
         
@@ -203,8 +203,28 @@ elif active_tab == "プラント":
     
     if st.session_state.plants:
         ref_options = {f"{p['plant_name']} : {p['mix_name']} (水:{p['w_design']}kg)": p for p in st.session_state.plants}
-        selected_ref_key = st.selectbox("今回の測定に反映する配合を選択", list(ref_options.keys()), key="ref_select_dropdown")
+        
+        default_ref_index = 0
+        for idx, (k, p) in enumerate(ref_options.items()):
+            if p.get('id') == st.session_state.active_plant_id:
+                default_ref_index = idx
+                break
+
+        def on_ref_plant_change():
+            sel_key = st.session_state.ref_select_dropdown
+            chosen = ref_options.get(sel_key)
+            if chosen:
+                st.session_state.active_plant_id = chosen.get('id')
+
+        selected_ref_key = st.selectbox(
+            "今回の測定に反映する配合を選択", 
+            list(ref_options.keys()), 
+            index=default_ref_index, 
+            key="ref_select_dropdown",
+            on_change=on_ref_plant_change
+        )
         ref_plant = ref_options[selected_ref_key]
+        st.session_state.active_plant_id = ref_plant.get('id')
         
         if st.button("選択した配合を今回の測定に反映する", type="primary", use_container_width=True):
             st.session_state.active_plant_id = ref_plant.get('id')
