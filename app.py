@@ -420,7 +420,6 @@ if st.session_state.show_exact_result_view:
                 record_date_str = now_jp.strftime("%Y%m%d")
                 record_time = now_jp.strftime("%Y-%m-%d %H:%M")
                 new_record = {
-                    "日付": record_date_str,
                     "日時": record_time,
                     "現場名": st.session_state.get("meas_site_name_input", "〇〇現場"),
                     "工事件名": st.session_state.get("meas_project_name_input", "〇〇工事"),
