@@ -602,9 +602,10 @@ else:
             st.session_state.active_plant_id = plant.get('id')
             
             meter_options = {f"{m['meter_name']} (校正: {m.get('calibration_date', '未設定')})": m for m in st.session_state.air_meters}
+            current_meas_meter = st.session_state.get("meas_meter_name", default_meter_name)
             meter_default_idx = 0
             for idx, (k, m_obj) in enumerate(meter_options.items()):
-                if m_obj.get('meter_name') == default_meter_name:
+                if m_obj.get('meter_name') == current_meas_meter:
                     meter_default_idx = idx
                     break
             selected_meter_key = st.selectbox("使用エアメーター選択", list(meter_options.keys()), index=meter_default_idx, key="measurement_meter_select")
@@ -613,6 +614,13 @@ else:
             st.session_state.meas_container_vol = meter['container_volume']
             st.session_state.meas_total_mass = meter['total_mass']
             st.session_state.meas_meter_name = meter['meter_name']
+
+            # 選択変更時に即時デバイス設定を保存して反映させる
+            save_device_settings({
+                "inspector_name": inspector_name,
+                "active_plant_id": plant.get('id', 1),
+                "meter_name": meter.get('meter_name', '')
+            })
 
             col_in1, col_in2 = st.columns(2)
             with col_in1:
