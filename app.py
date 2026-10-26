@@ -640,7 +640,7 @@ else:
                         st.write(f"- **工事件名**: {hist['工事件名']}")
                         st.write(f"- **プラント・配合**: {hist['プラント']} ({hist['配合']})")
                         st.write(f"- **設計単位水量**: {hist['設計単位水量']} kg/m³")
-                        st.write(f"- **推定単位水量**: {hist['推定単位水量(kg/m3.5' if '推定単位水量(kg/m3)' in hist else hist.get('推定単位水量(kg/m3)', 0))} kg/m³")
+                        st.write(f"- **推定単位水量**: {hist['推定単位水量(kg/m3)']} kg/m³")
                         st.write(f"- **測定空気量**: {hist['測定空気量(%)']}%")
                     with col_det2:
                         st.markdown("<div style='font-weight:bold; color:#000000; margin-bottom:5px;'>操作</div>", unsafe_allow_html=True)
