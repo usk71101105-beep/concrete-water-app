@@ -637,12 +637,21 @@ else:
         st.header("保存済み測定履歴")
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
-                with st.expander(f"{hist['日時']} | {hist['現場名']} ({hist['工事件名']}) [推定水量: {hist['推定単位水量(kg/m3)']}kg/m3]"):
-                    st.write(f"- **現場名**: {hist['現場名']}")
-                    st.write(f"- **工事件名**: {hist['工事件名']}")
-                    st.write(f"- プラント: {hist['プラント']} ({hist['配合']})")
-                    st.write(f"- 設計単位水量: {hist['設計単位水量']} kg/m³")
-                    st.write(f"- 測定空気量: {hist['測定空気量(%)']}%")
+                col_h1, col_h2 = st.columns([8, 2])
+                with col_h1:
+                    with st.expander(f"{hist['日時']} | {hist['現場名']} ({hist['工事件名']}) [推定水量: {hist['推定単位水量(kg/m3)']}kg/m3]"):
+                        st.write(f"- **現場名**: {hist['現場名']}")
+                        st.write(f"- **工事件名**: {hist['工事件名']}")
+                        st.write(f"- プラント: {hist['プラント']} ({hist['配合']})")
+                        st.write(f"- 設計単位水量: {hist['設計単位水量']} kg/m³")
+                        st.write(f"- 測定空気量: {hist['測定空気量(%)']}%")
+                with col_h2:
+                    if st.button("🗑️ 削除", key=f"del_hist_{idx}", use_container_width=True):
+                        st.session_state.history.pop(idx)
+                        save_history_store()
+                        st.success("指定した履歴を削除しました！")
+                        st.rerun()
+
             df_history_export = pd.DataFrame(st.session_state.history)
             csv_data = df_history_export.to_csv(index=False).encode('utf-8-sig')
             st.download_button(
