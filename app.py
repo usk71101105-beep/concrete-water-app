@@ -23,15 +23,27 @@ h1 {
     color: #000000 !important;
     margin-bottom: 0px !important;
 }
+/* 土木研究所法の見出しを中央寄せ・白文字に調整 */
+.sub-title-center {
+    text-align: center !important;
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    margin-top: 5px !important;
+    margin-bottom: 20px !important;
+}
 h3, p, label {
     color: #000000 !important;
 }
-/* 黄色のカスタムボタン（文字を白に指定） */
+/* 黄色のカスタムボタン（文字を白に指定、文字色を強制） */
 .yellow-btn button {
     background-color: #eab308 !important;
     color: #ffffff !important;
     font-weight: bold !important;
     border: none !important;
+}
+.yellow-btn button p, .yellow-btn button span {
+    color: #ffffff !important;
 }
 .yellow-btn button:hover {
     background-color: #ca8a04 !important;
@@ -334,7 +346,7 @@ if st.session_state.show_exact_result_view:
 else:
     # --- 通常の入力・操作画面 ---
     st.title("生コン単位水量推定試験")
-    st.markdown("##### 土木研究所法〔無注水法〕")
+    st.markdown('<div class="sub-title-center">土木研究所法〔無注水法〕</div>', unsafe_allow_html=True)
 
     if active_tab == "測定":
         if not st.session_state.plants or not st.session_state.air_meters:
