@@ -246,8 +246,6 @@ setInterval(() => {
 
 """, unsafe_allow_html=True)
 
-MASTER_FILE = "master_settings.json"
-
 # 端末・ユーザーごとの独立した履歴ファイル切り替え（Stramlit公式 st.query_params で確実にURLへ反映）
 query_user = st.query_params.get("user", "")
 
@@ -264,6 +262,7 @@ current_user_profile = st.session_state.get("device_user_id", "内藤 祐介")
 if not current_user_profile or current_user_profile == "default_user":
     current_user_profile = "内藤 祐介"
 
+MASTER_FILE = f"master_settings_{current_user_profile}.json"
 HISTORY_FILE = f"history_store_{current_user_profile}.json"
 DEVICE_SETTINGS_FILE = f"device_settings_{current_user_profile}.json"
 
@@ -286,12 +285,11 @@ default_plant_id = device_settings.get("active_plant_id", 1)
 default_meter_name = device_settings.get("meter_name", "")
 
 
-# 常に最新の master_settings.json (GitHubで更新された大元データ) からプラント・メーター情報を読み込む
+# ユーザーごとの独立した master_settings (プラント・メーター情報) を読み込む
 if os.path.exists(MASTER_FILE):
     try:
         with open(MASTER_FILE, "r", encoding="utf-8") as f:
             m_data = json.load(f)
-            # セッションにまだ無い場合、または常に大元ファイルと同期させたい場合
             st.session_state.plants = m_data.get("plants", [])
             st.session_state.air_meters = m_data.get("air_meters", [])
     except Exception:
@@ -920,7 +918,7 @@ else:
                 label="履歴CSVダウンロード",
                 data=csv_data,
                 file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/css"
+                mime="text/csv"
             )
             if st.button("履歴をすべてクリア"):
                 st.session_state.history = []
