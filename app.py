@@ -228,7 +228,19 @@ if query_user:
     """, height=0)
 
 if "device_user_id" not in st.session_state:
-    st.session_state.device_user_id = "default_user"
+    st.session_state.device_user_id = query_user if query_user else "default_user"
+
+# もしdevice_user_idが決まっている（default_user以外）のに、URLに ?user= が含まれていない場合は、強制的にURLに付与してリロードする
+if st.session_state.device_user_id != "default_user" and not query_user:
+    components.html(f"""
+    <script>
+        const currentUrl = window.parent.location.href;
+        if (!currentUrl.includes("user=")) {{
+            const separator = currentUrl.includes("?") ? "&" : "?";
+            window.parent.location.href = currentUrl + separator + "user=" + encodeURIComponent("{st.session_state.device_user_id}");
+        }}
+    </script>
+    """, height=0)
 
 # まだユーザーが決まっていない場合、ブラウザのlocalStorageを自動チェックして復元する
 if st.session_state.device_user_id == "default_user" and not query_user:
