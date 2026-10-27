@@ -532,7 +532,7 @@ if st.session_state.show_exact_result_view:
             </div>
 
             <div class="result-grid">
-                <div></div>
+                <div class="r-label-black">誤差</div>
                 <div class="r-val-black">{diff_val}</div>
                 <div class="r-unit-black">kg/m³</div>
             </div>
