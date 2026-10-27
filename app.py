@@ -579,7 +579,18 @@ else:
         else:
             site_name = st.text_input("現場名", value=st.session_state.get("meas_site_name_input", "〇〇現場"), key="meas_site_name_field")
             project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", "〇〇道路改良工事"), key="meas_project_name_field")
-            inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", default_inspector), key="meas_inspector_field")
+            
+            col_insp1, col_insp2 = st.columns([3, 1])
+            with col_insp1:
+                inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", default_inspector), key="meas_inspector_field")
+            with col_insp2:
+                st.markdown("<div style='height: 27px;'></div>", unsafe_allow_html=True)
+                if st.button("URLに反映", use_container_width=True, key="btn_reflect_url"):
+                    clean_name = inspector_name.strip() if inspector_name.strip() else "内藤 祐介"
+                    st.session_state.device_user_id = clean_name
+                    st.query_params["user"] = clean_name
+                    st.success(f"URLに「{clean_name}」を反映しました！")
+                    st.rerun()
             
             st.session_state.meas_site_name_input = site_name
             st.session_state.meas_project_name_input = project_name
