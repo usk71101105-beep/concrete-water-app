@@ -402,7 +402,7 @@ def save_history_store():
 active_tab = st.session_state.current_tab
 
 if st.session_state.show_exact_result_view:
-    plant_options = {f"[{i + 1}]{p['plant_name']} : {p['mix_name']}": p for i, p in enumerate(st.session_state.plants)}
+    plant_options = {f"[{i + 1}]{p['plant_name']} : {p['mix_name']} (水: {int(round(float(p['w_design'])))}kg, セメント: {int(round(float(p['c'])))}kg)": p for i, p in enumerate(st.session_state.plants)}
     plant = plant_options.get(list(plant_options.keys())[0])
     for p in st.session_state.plants:
         if p.get('id') == st.session_state.active_plant_id:
@@ -608,7 +608,7 @@ else:
             with col_insp2:
                 st.markdown("<div style='height: 27px;'></div>", unsafe_allow_html=True)
                 if st.button("URLに反映", use_container_width=True, key="btn_reflect_url"):
-                    clean_name = inspector_name.strip() if inspector_name.strip() else current_user_profile
+                    clean_name = inspector_name.strip() if inspector_name.strip() else "内藤 祐介"
                     st.session_state.device_user_id = clean_name
                     st.query_params["user"] = clean_name
                     # ブラウザのlocalStorageにも保存し、次回から自動でこの端末・ブラウザ専用のJSONが読み込まれるようにする
@@ -626,7 +626,7 @@ else:
             st.session_state.meas_project_name_input = project_name
             st.session_state.meas_inspector_input = inspector_name
             
-            plant_options = {f"[{i + 1}]{p['plant_name']} : {p['mix_name']}": p for i, p in enumerate(st.session_state.plants)}
+            plant_options = {f"[{i + 1}]{p['plant_name']} : {p['mix_name']} (水: {int(round(float(p['w_design'])))}kg, セメント: {int(round(float(p['c'])))}kg)": p for i, p in enumerate(st.session_state.plants)}
             plant_keys_list = list(plant_options.keys())
             
             default_plant_key = plant_keys_list[0]
