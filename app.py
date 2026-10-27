@@ -246,17 +246,39 @@ setInterval(() => {
 
 """, unsafe_allow_html=True)
 
-# 端末・ユーザーごとの独立した履歴ファイル切り替え（Stramlit公式 st.query_params で確実にURLへ反映）
+# 端末・ブラウザごとのlocalStorage自動記憶 ＆ st.query_params 連携
 query_user = st.query_params.get("user", "")
 
 if not query_user:
-    # URLにuserパラメータがない場合、まずlocalStorageから取得するか、デフォルト名を設定してURLを更新する
-    # Streamlitの st.query_params に代入すると、ブラウザのアドレスバーのURLが確実に書き換わります
+    # URLにuserパラメータがない場合、ブラウザのlocalStorageから前回の測定者名を自動取得する仕組み
+    # 初回アクセス時、もしlocalStorageに保存されていればその名前にリダイレクトする
+    components.html("""
+    <script>
+        const savedUser = localStorage.getItem("concrete_app_user");
+        if (savedUser && savedUser.trim() !== "") {
+            const currentUrl = window.parent.location.href;
+            if (!currentUrl.includes("user=")) {
+                const sep = currentUrl.includes("?") ? "&" : "?";
+                window.parent.location.href = currentUrl + sep + "user=" + encodeURIComponent(savedUser);
+            }
+        }
+    </script>
+    """, height=0)
+    
+    # Python側でも暫定デフォルトを設定してURLパラメータを付与
     st.query_params["user"] = "内藤 祐介"
     st.session_state.device_user_id = "内藤 祐介"
     st.rerun()
 else:
     st.session_state.device_user_id = query_user
+    # 閲覧中のユーザー名をブラウザのlocalStorageに確実に保存・同期する
+    components.html(f"""
+    <script>
+        try {{
+            localStorage.setItem("concrete_app_user", "{query_user}");
+        }} catch(e) {{}}
+    </script>
+    """, height=0)
 
 current_user_profile = st.session_state.get("device_user_id", "内藤 祐介")
 if not current_user_profile or current_user_profile == "default_user":
@@ -579,7 +601,6 @@ else:
         else:
             site_name = st.text_input("現場名", value=st.session_state.get("meas_site_name_input", "〇〇現場"), key="meas_site_name_field")
             project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", "〇〇道路改良工事"), key="meas_project_name_field")
-            
             col_insp1, col_insp2 = st.columns([3, 1])
             with col_insp1:
                 inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", default_inspector), key="meas_inspector_field")
@@ -589,7 +610,15 @@ else:
                     clean_name = inspector_name.strip() if inspector_name.strip() else "内藤 祐介"
                     st.session_state.device_user_id = clean_name
                     st.query_params["user"] = clean_name
-                    st.success(f"URLに「{clean_name}」を反映しました！")
+                    # ブラウザのlocalStorageにも保存し、次回から自動でこの端末・ブラウザ専用のJSONが読み込まれるようにする
+                    components.html(f"""
+                    <script>
+                        try {{
+                            localStorage.setItem("concrete_app_user", "{clean_name}");
+                        }} catch(e) {{}}
+                    </script>
+                    """, height=0)
+                    st.success(f"URLおよび端末の保存データに「{clean_name}」を反映しました！")
                     st.rerun()
             
             st.session_state.meas_site_name_input = site_name
@@ -654,6 +683,7 @@ else:
             st.session_state.meas_total_mass = meter['total_mass']
             st.session_state.meas_meter_name = meter['meter_name']
 
+            # 選択変更時に即時デバイス設定を保存して反映させる
             save_device_settings({
                 "inspector_name": inspector_name,
                 "active_plant_id": plant.get('id', 1),
