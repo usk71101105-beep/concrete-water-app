@@ -43,7 +43,6 @@ st.markdown("""
 .stApp {
     background-color: #b0b0b0 !important;
 }
-/* Streamlitの上の黒いバー、下のデプロイボタン・バッジ・フッターを完全に非表示にする */
 header[data-testid="stHeader"] {
     display: none !important;
 }
@@ -65,7 +64,6 @@ div[data-testid="stStatusWidget"] {
 #MainMenu {
     visibility: hidden !important;
 }
-/* 追加：右下のバッジやウォーターマークを完全に非表示にする */
 div[class*="viewerBadge"] {
     display: none !important;
 }
@@ -141,8 +139,6 @@ div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] span,
 div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] label {
     color: #ffffff !important;
 }
-
-/* 画面右下に固定配置されるStreamlitのバッジやボタンを強制非表示にする */
 div[style*="position: fixed"][style*="bottom"],
 div[style*="position:fixed"][style*="bottom"] {
     display: none !important;
@@ -154,22 +150,16 @@ a[href*="streamlit.cloud"] {
 iframe[src*="streamlit"] {
     display: none !important;
 }
-
-
-/* アイコンやバッジが万が一表示されても、クリック（タップ）に反応しないようにする（すり抜ける） */
 div[class*="viewerBadge"],
 .styles_viewerBadge__1yG5_,
 div[style*="position: fixed"],
 div[style*="position:fixed"] {
     pointer-events: none !important;
 }
-
 </style>
 
 <script>
-// Streamlitのバッジや不要な要素をシャドウDOMも含めて徹底的に根絶するスクリプト
 function removeBadges() {
-    // 通常のDOMから検索
     const selectors = [
         '[class*="viewerBadge"]',
         '[class*="styles_viewerBadge"]',
@@ -178,16 +168,12 @@ function removeBadges() {
         'a[href*="streamlit.io"]',
         'footer'
     ];
-    
     selectors.forEach(sel => {
         document.querySelectorAll(sel).forEach(el => el.remove());
     });
-
-    // すべてのiframeや要素を走査して「Streamlit」や「Hosted with」が含まれるものを削除
     const allEls = document.querySelectorAll('div, a, span, button');
     allEls.forEach(el => {
         if (el.innerText && (el.innerText.includes('Streamlit') || el.innerText.includes('Hosted with'))) {
-            // ただしアプリ内の重要なテキストを巻き込まないよう、position:fixedのものに限定
             const pos = window.getComputedStyle(el).position;
             if (pos === 'fixed' || pos === 'absolute') {
                 el.remove();
@@ -195,14 +181,11 @@ function removeBadges() {
         }
     });
 }
-
 setInterval(removeBadges, 200);
 window.addEventListener('load', removeBadges);
 </script>
 
-
 <script>
-// 画面右下のバッジ領域を完全にカバーする透明なシールド（盾）を挿入してタッチをブロックする
 window.addEventListener('DOMContentLoaded', () => {
     createShield();
 });
@@ -228,27 +211,11 @@ function createShield() {
     }
 }
 </script>
-
-
-<script>
-// Streamlitのバッジや不要なフローティング要素をDOMから完全に削除するスクリプト
-setInterval(() => {
-    const unwanted = document.querySelectorAll('div[class*="viewerBadge"], .styles_viewerBadge__1yG5_, [data-testid="stToolbar"], div[style*="position: fixed"]');
-    unwanted.forEach(el => {
-        if (el && el.parentNode) {
-            el.remove();
-        }
-    });
-}, 300);
-</script>
-
-
-
 """, unsafe_allow_html=True)
 
 MASTER_FILE = "master_settings.json"
 
-# 端末・ユーザーごとの独立した履歴ファイル切り替え（PCとスマホで混ざらないように分離）
+# 端末・ユーザーごとの独立した履歴ファイル切り替え（URLの ?user=〇〇 で自動分離）
 query_user = st.query_params.get("user", "")
 if query_user:
     st.session_state.device_user_id = query_user
@@ -279,17 +246,21 @@ default_inspector = device_settings.get("inspector_name", "内藤 祐介")
 default_plant_id = device_settings.get("active_plant_id", 1)
 default_meter_name = device_settings.get("meter_name", "")
 
+# 常に最新の master_settings.json (GitHubで更新された大元データ) からプラント・メーター情報を読み込む
+if os.path.exists(MASTER_FILE):
+    try:
+        with open(MASTER_FILE, "r", encoding="utf-8") as f:
+            m_data = json.load(f)
+            st.session_state.plants = m_data.get("plants", [])
+            st.session_state.air_meters = m_data.get("air_meters", [])
+    except Exception:
+        pass
 
 if "plants" not in st.session_state:
-    if os.path.exists(MASTER_FILE):
-        try:
-            with open(MASTER_FILE, "r", encoding="utf-8") as f:
-                m_data = json.load(f)
-                st.session_state.plants = m_data.get("plants", [])
-                st.session_state.air_meters = m_data.get("air_meters", [])
-        except Exception:
-            st.session_state.plants = []
-            st.session_state.air_meters = []
+    st.session_state.plants = []
+
+if "air_meters" not in st.session_state:
+    st.session_state.air_meters = []
     if not st.session_state.get("plants"):
         st.session_state.plants = [
             {
@@ -622,7 +593,6 @@ else:
             st.session_state.meas_total_mass = meter['total_mass']
             st.session_state.meas_meter_name = meter['meter_name']
 
-            # 選択変更時に即時デバイス設定を保存して反映させる
             save_device_settings({
                 "inspector_name": inspector_name,
                 "active_plant_id": plant.get('id', 1),
@@ -681,11 +651,9 @@ else:
                     "meter_name": meter.get('meter_name', '')
                 })
                 
-                # 自動保存処理を1回のクリックで実行
                 now_jp = get_japan_now()
                 record_time = now_jp.strftime("%Y-%m-%d %H:%M")
                 
-                # 計算値の算出
                 air_fixed_auto = 4.5
                 w_des_auto = float(plant['w_design'])
                 c_val_auto = float(plant['c'])
@@ -731,7 +699,6 @@ else:
     elif active_tab == "プラント":
         st.header("プラント・配合マスタ登録および一覧")
         
-        # 登録済み配合の管理（修正・削除）を上に配置
         if st.session_state.plants:
             st.subheader("登録済み配合の管理（修正・削除）")
             for idx, p in enumerate(st.session_state.plants):
@@ -849,11 +816,9 @@ else:
         st.header("保存済み測定履歴")
         if st.session_state.history:
             for idx, hist in enumerate(st.session_state.history):
-                
                 est_w = hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))
                 des_w = hist.get("設計単位水量", 0)
                 err_val = hist.get("誤差", est_w - des_w)
-
                 meter_str = hist.get("エアメーター", "C13-WP776185XT")
                 
                 st.markdown(f"""
@@ -921,8 +886,6 @@ else:
     elif active_tab == "データ管理":
         st.header("設定データ・測定履歴の保存と読み込み")
 
-
-        # 端末・ユーザープロファイル設定
         with st.expander("📱 端末・ユーザーごとの独立プロファイル設定（PCとスマホの履歴分離）", expanded=False):
             st.markdown("この端末専用のプロファイル名を設定することで、他の端末（PCとスマホ等）の履歴と完全に分離して保存・閲覧できます。")
             profile_input = st.text_input("現在の端末プロファイル名", value=st.session_state.device_user_id, key="profile_input_field")
@@ -934,8 +897,6 @@ else:
                 st.rerun()
             
             st.info(f"現在適用中のプロファイル: **{current_user_profile}**\n(保存先ファイル: `history_store_{current_user_profile}.json`)")
-            
-            st.warning("⚠️ **【重要】再起動後に `default_user` に戻ってしまう場合**\nStreamlitアプリがサーバー側で再起動すると、一時メモリがリセットされます。\n**対策:** プロファイルを設定した状態のブラウザのURL（末尾に `?user=あなたのお名前` が付いたURL）を**お使いのスマホのホーム画面に追加**するか、**ブックマーク（お気に入り）に登録**して、そのURLからアクセスするようにしてください。次回から自動でこのプロファイルで起動します！")
 
         st.markdown("登録したプラント情報や測定履歴データをファイルとして保存したり、復元することができます。")
         st.subheader("① プラント・メーター設定の保存")
