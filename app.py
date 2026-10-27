@@ -248,33 +248,17 @@ setInterval(() => {
 
 MASTER_FILE = "master_settings.json"
 
-# 端末・ユーザーごとの独立した履歴ファイル切り替え（URLパラメータ ＆ localStorage自動付与）
+# 端末・ユーザーごとの独立した履歴ファイル切り替え（Stramlit公式 st.query_params で確実にURLへ反映）
 query_user = st.query_params.get("user", "")
 
-if query_user:
-    st.session_state.device_user_id = query_user
-    components.html(f"""
-    <script>
-        try {{
-            localStorage.setItem("concrete_app_user", "{query_user}");
-        }} catch(e) {{}}
-    </script>
-    """, height=0)
-else:
-    # URLにuserがない場合、localStorageをチェックするか、デフォルト（内藤 祐介）を強制的にURLに付与する
-    components.html("""
-    <script>
-        const savedUser = localStorage.getItem("concrete_app_user");
-        const targetUser = (savedUser && savedUser.trim() !== "") ? savedUser : "内藤 祐介";
-        const currentUrl = window.parent.location.href;
-        if (!currentUrl.includes("user=")) {
-            const separator = currentUrl.includes("?") ? "&" : "?";
-            window.parent.location.href = currentUrl + separator + "user=" + encodeURIComponent(targetUser);
-        }
-    </script>
-    """, height=0)
-    # Python側でも暫定的にデフォルトを設定して描画継続
+if not query_user:
+    # URLにuserパラメータがない場合、まずlocalStorageから取得するか、デフォルト名を設定してURLを更新する
+    # Streamlitの st.query_params に代入すると、ブラウザのアドレスバーのURLが確実に書き換わります
+    st.query_params["user"] = "内藤 祐介"
     st.session_state.device_user_id = "内藤 祐介"
+    st.rerun()
+else:
+    st.session_state.device_user_id = query_user
 
 current_user_profile = st.session_state.get("device_user_id", "内藤 祐介")
 if not current_user_profile or current_user_profile == "default_user":
@@ -936,7 +920,7 @@ else:
                 label="履歴CSVダウンロード",
                 data=csv_data,
                 file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/csv"
+                mime="text/css"
             )
             if st.button("履歴をすべてクリア"):
                 st.session_state.history = []
