@@ -347,7 +347,7 @@ if "meas_site_name_input" not in st.session_state:
     st.session_state.meas_site_name_input = "〇〇現場"
 if "meas_project_name_input" not in st.session_state:
     st.session_state.meas_project_name_input = "〇〇道路改良工事"
-if "meas_inspector_input" not in st.session_state:
+if "meas_inspector_input" not in st.session_state or st.session_state.meas_inspector_input == "内藤 祐介":
     st.session_state.meas_inspector_input = default_inspector
 
 if "history" not in st.session_state:
@@ -961,7 +961,7 @@ else:
         )
         st.markdown("---")
         st.subheader("② 保存したデータの読み込み（復元）")
-        uploaded_file = st.file_uploader("保存したファイル (.json) 選んでください", type=["json"], key="restore_uploader")
+        uploaded_file = st.file_uploader("保存したファイル (.json) を選択", type=["json"], key="restore_uploader")
         if uploaded_file is not None:
             try:
                 content = json.load(uploaded_file)
