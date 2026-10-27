@@ -302,7 +302,6 @@ default_inspector = device_settings.get("inspector_name", current_user_profile i
 default_plant_id = device_settings.get("active_plant_id", 1)
 default_meter_name = device_settings.get("meter_name", "")
 
-# 常に最新の master_settings.json からプラント・メーター情報を読み込む
 if os.path.exists(MASTER_FILE):
     try:
         with open(MASTER_FILE, "r", encoding="utf-8") as f:
@@ -962,7 +961,7 @@ else:
         )
         st.markdown("---")
         st.subheader("② 保存したデータの読み込み（復元）")
-        uploaded_file = st.file_uploader("保存したファイル (.json) を選択", type=["json"], key="restore_uploader")
+        uploaded_file = st.file_uploader("保存したファイル (.json) 選んでください", type=["json"], key="restore_uploader")
         if uploaded_file is not None:
             try:
                 content = json.load(uploaded_file)
