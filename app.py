@@ -285,13 +285,24 @@ default_plant_id = device_settings.get("active_plant_id", 1)
 default_meter_name = device_settings.get("meter_name", "")
 
 
-# ユーザーごとの独立した master_settings (プラント・メーター情報) を読み込む
+# ユーザーごとの独立した master_settings (プラント・メーター情報) を読み込む（旧ファイルが存在する場合は自動移行）
 if os.path.exists(MASTER_FILE):
     try:
         with open(MASTER_FILE, "r", encoding="utf-8") as f:
             m_data = json.load(f)
             st.session_state.plants = m_data.get("plants", [])
             st.session_state.air_meters = m_data.get("air_meters", [])
+    except Exception:
+        pass
+elif os.path.exists("master_settings.json"):
+    # 旧共通ファイルが存在する場合は、新プロファイル用に引き継ぐ（移行する）
+    try:
+        with open("master_settings.json", "r", encoding="utf-8") as f:
+            m_data = json.load(f)
+            st.session_state.plants = m_data.get("plants", [])
+            st.session_state.air_meters = m_data.get("air_meters", [])
+        with open(MASTER_FILE, "w", encoding="utf-8") as f:
+            json.dump({"plants": st.session_state.plants, "air_meters": st.session_state.air_meters}, f, ensure_ascii=False, indent=4)
     except Exception:
         pass
 
@@ -918,7 +929,7 @@ else:
                 label="履歴CSVダウンロード",
                 data=csv_data,
                 file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/csv"
+                mime="text/css"
             )
             if st.button("履歴をすべてクリア"):
                 st.session_state.history = []
