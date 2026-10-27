@@ -215,15 +215,36 @@ function createShield() {
 
 MASTER_FILE = "master_settings.json"
 
-# 端末・ユーザーごとの独立した履歴ファイル切り替え（PCとスマホで混ざらないように分離）
+# 端末・ユーザーごとの独立した履歴ファイル切り替え（ブラウザのlocalStorage自動記憶対応）
 query_user = st.query_params.get("user", "")
 if query_user:
     st.session_state.device_user_id = query_user
+    components.html(f"""
+    <script>
+        try {{
+            localStorage.setItem("concrete_app_user", "{query_user}");
+        }} catch(e) {{}}
+    </script>
+    """, height=0)
+
 if "device_user_id" not in st.session_state:
     st.session_state.device_user_id = "default_user"
 
-# 初回ログイン（名前・ID未設定）の場合のウェルカム画面・ログイン処理
+# まだユーザーが決まっていない場合、ブラウザのlocalStorageを自動チェックして復元する
 if st.session_state.device_user_id == "default_user" and not query_user:
+    components.html("""
+    <script>
+        const savedUser = localStorage.getItem("concrete_app_user");
+        if (savedUser && savedUser.trim() !== "") {
+            const currentUrl = window.parent.location.href;
+            if (!currentUrl.includes("user=")) {
+                const separator = currentUrl.includes("?") ? "&" : "?";
+                window.parent.location.href = currentUrl + separator + "user=" + encodeURIComponent(savedUser);
+            }
+        }
+    </script>
+    """, height=0)
+
     st.title("生コン単位水量推定試験")
     st.markdown('<div class="sub-title-center">土木研究所法〔無注水法〕</div>', unsafe_allow_html=True)
     
@@ -231,7 +252,7 @@ if st.session_state.device_user_id == "default_user" and not query_user:
     <div style="background-color: #1e293b; padding: 20px; border-radius: 10px; border: 2px solid #3b82f6; color: #ffffff; margin-top: 30px;">
         <h3 style="color: #ffffff; margin-top: 0;">👋 初めてご利用の方へ（初期設定）</h3>
         <p>他の利用者とデータや測定履歴が混ざらないよう、あなた専用のプロファイル（お名前や現場名）を入力してください。</p>
-        <p style="font-size: 13px; color: #93c5fd; margin-bottom: 0;">※一度設定すると、次回からはこの端末・ブラウザ専用の独立したデータとして保存されます。</p>
+        <p style="font-size: 13px; color: #93c5fd; margin-bottom: 0;">※一度設定すると、次回からはこのブラウザに自動記憶され、入力が不要になります。</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -244,7 +265,12 @@ if st.session_state.device_user_id == "default_user" and not query_user:
             if login_name.strip():
                 clean_name = login_name.strip()
                 st.session_state.device_user_id = clean_name
-                st.query_params["user"] = clean_name
+                components.html(f"""
+                <script>
+                    localStorage.setItem("concrete_app_user", "{clean_name}");
+                    window.parent.location.href = window.parent.location.href.split('?')[0] + "?user=" + encodeURIComponent("{clean_name}");
+                </script>
+                """, height=50)
                 st.success(f"ようこそ、{clean_name}さん！アプリを起動します...")
                 st.rerun()
             else:
