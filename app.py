@@ -250,12 +250,12 @@ setInterval(() => {
 query_user = st.query_params.get("user", "")
 
 if not query_user:
-    # URLにuserパラメータがない場合、ブラウザのlocalStorageから前回の測定者名を自動取得する仕組み
-    # 初回アクセス時、もしlocalStorageに保存されていればその名前にリダイレクトする
+    # URLにuserパラメータがない場合、まずJavaScriptでブラウザのlocalStorageを確認する
+    # すでにこの端末で測定者名が保存されていれば、自動的にそのパラメータ付きURLにリダイレクトする
     components.html("""
     <script>
         const savedUser = localStorage.getItem("concrete_app_user");
-        if (savedUser && savedUser.trim() !== "") {
+        if (savedUser && savedUser.trim() !== "" && savedUser !== "undefined") {
             const currentUrl = window.parent.location.href;
             if (!currentUrl.includes("user=")) {
                 const sep = currentUrl.includes("?") ? "&" : "?";
@@ -265,13 +265,13 @@ if not query_user:
     </script>
     """, height=0)
     
-    # Python側でも暫定デフォルトを設定してURLパラメータを付与
-    st.query_params["user"] = "内藤 祐介"
-    st.session_state.device_user_id = "内藤 祐介"
+    # 初回アクセス時（localStorageに何もない場合）、汎用デフォルトまたは入力促し用のプロファイルを設定
+    st.query_params["user"] = "マイデータ"
+    st.session_state.device_user_id = "マイデータ"
     st.rerun()
 else:
     st.session_state.device_user_id = query_user
-    # 閲覧中のユーザー名をブラウザのlocalStorageに確実に保存・同期する
+    # アクセス中のユーザー名をこの端末のlocalStorageに確実に記憶させる
     components.html(f"""
     <script>
         try {{
@@ -280,9 +280,10 @@ else:
     </script>
     """, height=0)
 
-current_user_profile = st.session_state.get("device_user_id", "内藤 祐介")
+current_user_profile = st.session_state.get("device_user_id", "マイデータ")
 if not current_user_profile or current_user_profile == "default_user":
-    current_user_profile = "内藤 祐介"
+    current_user_profile = "マイデータ"
+
 
 MASTER_FILE = f"master_settings_{current_user_profile}.json"
 HISTORY_FILE = f"history_store_{current_user_profile}.json"
@@ -302,7 +303,7 @@ def save_device_settings(settings_dict):
         json.dump(settings_dict, f, ensure_ascii=False, indent=4)
 
 device_settings = load_device_settings()
-default_inspector = device_settings.get("inspector_name", current_user_profile if current_user_profile != "default_user" else "内藤 祐介")
+default_inspector = device_settings.get("inspector_name", current_user_profile if current_user_profile != "マイデータ" else "内藤 祐介")
 default_plant_id = device_settings.get("active_plant_id", 1)
 default_meter_name = device_settings.get("meter_name", "")
 
@@ -607,7 +608,7 @@ else:
             with col_insp2:
                 st.markdown("<div style='height: 27px;'></div>", unsafe_allow_html=True)
                 if st.button("URLに反映", use_container_width=True, key="btn_reflect_url"):
-                    clean_name = inspector_name.strip() if inspector_name.strip() else "内藤 祐介"
+                    clean_name = inspector_name.strip() if inspector_name.strip() else current_user_profile
                     st.session_state.device_user_id = clean_name
                     st.query_params["user"] = clean_name
                     # ブラウザのlocalStorageにも保存し、次回から自動でこの端末・ブラウザ専用のJSONが読み込まれるようにする
