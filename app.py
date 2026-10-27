@@ -215,12 +215,42 @@ function createShield() {
 
 MASTER_FILE = "master_settings.json"
 
-# 端末・ユーザーごとの独立した履歴ファイル切り替え（URLの ?user=〇〇 で自動分離）
+# 端末・ユーザーごとの独立した履歴ファイル切り替え（PCとスマホで混ざらないように分離）
 query_user = st.query_params.get("user", "")
 if query_user:
     st.session_state.device_user_id = query_user
 if "device_user_id" not in st.session_state:
     st.session_state.device_user_id = "default_user"
+
+# 初回ログイン（名前・ID未設定）の場合のウェルカム画面・ログイン処理
+if st.session_state.device_user_id == "default_user" and not query_user:
+    st.title("生コン単位水量推定試験")
+    st.markdown('<div class="sub-title-center">土木研究所法〔無注水法〕</div>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="background-color: #1e293b; padding: 20px; border-radius: 10px; border: 2px solid #3b82f6; color: #ffffff; margin-top: 30px;">
+        <h3 style="color: #ffffff; margin-top: 0;">👋 初めてご利用の方へ（初期設定）</h3>
+        <p>他の利用者とデータや測定履歴が混ざらないよう、あなた専用のプロファイル（お名前や現場名）を入力してください。</p>
+        <p style="font-size: 13px; color: #93c5fd; margin-bottom: 0;">※一度設定すると、次回からはこの端末・ブラウザ専用の独立したデータとして保存されます。</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    with st.form("login_form"):
+        login_name = st.text_input("お名前（担当者名）", value="", placeholder="例: 内藤 祐介")
+        submit_login = st.form_submit_button("🚀 アプリを開始する", type="primary", use_container_width=True)
+        
+        if submit_login:
+            if login_name.strip():
+                clean_name = login_name.strip()
+                st.session_state.device_user_id = clean_name
+                st.query_params["user"] = clean_name
+                st.success(f"ようこそ、{clean_name}さん！アプリを起動します...")
+                st.rerun()
+            else:
+                st.error("お名前または現場名を入力してください。")
+    
+    st.stop()
 
 current_user_profile = st.session_state.device_user_id
 HISTORY_FILE = f"history_store_{current_user_profile}.json"
@@ -242,11 +272,11 @@ def save_device_settings(settings_dict):
         json.dump(settings_dict, f, ensure_ascii=False, indent=4)
 
 device_settings = load_device_settings()
-default_inspector = device_settings.get("inspector_name", "内藤 祐介")
+default_inspector = device_settings.get("inspector_name", current_user_profile if current_user_profile != "default_user" else "内藤 祐介")
 default_plant_id = device_settings.get("active_plant_id", 1)
 default_meter_name = device_settings.get("meter_name", "")
 
-# 常に最新の master_settings.json (GitHubで更新された大元データ) からプラント・メーター情報を読み込む
+# 常に最新の master_settings.json からプラント・メーター情報を読み込む
 if os.path.exists(MASTER_FILE):
     try:
         with open(MASTER_FILE, "r", encoding="utf-8") as f:
@@ -529,7 +559,7 @@ else:
         else:
             site_name = st.text_input("現場名", value=st.session_state.get("meas_site_name_input", "〇〇現場"), key="meas_site_name_field")
             project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", "〇〇道路改良工事"), key="meas_project_name_field")
-            inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", "内藤 祐介"), key="meas_inspector_field")
+            inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", default_inspector), key="meas_inspector_field")
             
             st.session_state.meas_site_name_input = site_name
             st.session_state.meas_project_name_input = project_name
@@ -886,16 +916,7 @@ else:
     elif active_tab == "データ管理":
         st.header("設定データ・測定履歴の保存と読み込み")
 
-        with st.expander("📱 端末・ユーザーごとの独立プロファイル設定（PCとスマホの履歴分離）", expanded=False):
-            st.markdown("この端末専用のプロファイル名を設定することで、他の端末（PCとスマホ等）の履歴と完全に分離して保存・閲覧できます。")
-            profile_input = st.text_input("現在の端末プロファイル名", value=st.session_state.device_user_id, key="profile_input_field")
-            if st.button("プロファイル名を適用して切り替える", use_container_width=True):
-                new_profile = profile_input.strip() if profile_input.strip() else "default_user"
-                st.session_state.device_user_id = new_profile
-                st.query_params["user"] = new_profile
-                st.success(f"プロファイル「{new_profile}」に切り替えました！")
-                st.rerun()
-            
+        with st.expander("📱 現在の端末プロファイル確認", expanded=False):
             st.info(f"現在適用中のプロファイル: **{current_user_profile}**\n(保存先ファイル: `history_store_{current_user_profile}.json`)")
 
         st.markdown("登録したプラント情報や測定履歴データをファイルとして保存したり、復元することができます。")
