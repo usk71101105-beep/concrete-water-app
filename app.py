@@ -4,6 +4,7 @@ from datetime import datetime, date
 from zoneinfo import ZoneInfo
 import json
 import os
+import glob
 import urllib.request
 import urllib.error
 import streamlit.components.v1 as components
@@ -284,9 +285,13 @@ current_user_profile = st.session_state.get("device_user_id", "マイデータ")
 if not current_user_profile or current_user_profile == "default_user":
     current_user_profile = "マイデータ"
 
-
 MASTER_FILE = f"master_settings_{current_user_profile}.json"
 HISTORY_FILE = f"history_store_{current_user_profile}.json"
+DEVICE_SETTINGS_FILE = f"device_settings_{current_user_profile}.json"
+current_user_profile = st.session_state.device_user_id
+HISTORY_FILE = f"history_store_{current_user_profile}.json"
+
+# 端末・プロファイルごとの固有設定（測定者名や前回選択の記憶）
 DEVICE_SETTINGS_FILE = f"device_settings_{current_user_profile}.json"
 
 def load_device_settings():
@@ -303,63 +308,95 @@ def save_device_settings(settings_dict):
         json.dump(settings_dict, f, ensure_ascii=False, indent=4)
 
 device_settings = load_device_settings()
-default_inspector = device_settings.get("inspector_name", current_user_profile if current_user_profile != "マイデータ" else "内藤 祐介")
+default_inspector = device_settings.get("inspector_name", current_user_profile if current_user_profile != "default_user" else "内藤 祐介")
 default_plant_id = device_settings.get("active_plant_id", 1)
 default_meter_name = device_settings.get("meter_name", "")
 
 
-# ユーザーごとの独立した master_settings (プラント・メーター情報) を読み込む（旧ファイルが存在する場合は自動移行）
+# プラント・メーター情報の全プロファイル/旧ファイルからのスマート統合読み込み
+all_plants = []
+all_meters = []
+
+# 1. 旧共通ファイルがあれば読み込む
+if os.path.exists("master_settings.json"):
+    try:
+        with open("master_settings.json", "r", encoding="utf-8") as f:
+            m_data = json.load(f)
+            for p in m_data.get("plants", []):
+                if p not in all_plants:
+                    all_plants.append(p)
+            for m in m_data.get("air_meters", []):
+                if m not in all_meters:
+                    all_meters.append(m)
+    except Exception:
+        pass
+
+# 2. 現在のプロファイルのマスターファイルがあれば読み込む
 if os.path.exists(MASTER_FILE):
     try:
         with open(MASTER_FILE, "r", encoding="utf-8") as f:
             m_data = json.load(f)
-            st.session_state.plants = m_data.get("plants", [])
-            st.session_state.air_meters = m_data.get("air_meters", [])
+            for p in m_data.get("plants", []):
+                if p not in all_plants:
+                    all_plants.append(p)
+            for m in m_data.get("air_meters", []):
+                if m not in all_meters:
+                    all_meters.append(m)
     except Exception:
         pass
-elif os.path.exists("master_settings.json"):
-    # 旧共通ファイルが存在する場合は、新プロファイル用に引き継ぐ（移行する）
+
+# 3. 他のすべての master_settings_*.json からも収集する（データ損失防止）
+for fn in glob.glob("master_settings_*.json"):
     try:
-        with open("master_settings.json", "r", encoding="utf-8") as f:
+        with open(fn, "r", encoding="utf-8") as f:
             m_data = json.load(f)
-            st.session_state.plants = m_data.get("plants", [])
-            st.session_state.air_meters = m_data.get("air_meters", [])
-        with open(MASTER_FILE, "w", encoding="utf-8") as f:
-            json.dump({"plants": st.session_state.plants, "air_meters": st.session_state.air_meters}, f, ensure_ascii=False, indent=4)
+            for p in m_data.get("plants", []):
+                if p not in all_plants:
+                    all_plants.append(p)
+            for m in m_data.get("air_meters", []):
+                if m not in all_meters:
+                    all_meters.append(m)
     except Exception:
         pass
 
-if "plants" not in st.session_state:
-    st.session_state.plants = []
+if all_plants:
+    st.session_state.plants = all_plants
+else:
+    st.session_state.plants = [
+        {
+            "id": 1,
+            "plant_name": "中村建材",
+            "mix_name": "27-12-20-BB",
+            "w_design": 164,
+            "c": 300,
+            "s": 780,
+            "g": 950,
+        }
+    ]
 
-if "air_meters" not in st.session_state:
-    st.session_state.air_meters = []
-    if not st.session_state.get("plants"):
-        st.session_state.plants = [
-            {
-                "id": 1,
-                "plant_name": "中村建材",
-                "mix_name": "27-12-20-BB",
-                "w_design": 164,
-                "c": 300,
-                "s": 780,
-                "g": 950,
-            }
-        ]
-    if not st.session_state.get("air_meters"):
-        st.session_state.air_meters = [
-            {
-                "id": 1,
-                "meter_name": "C13-WP776185XT",
-                "container_volume": 7000,
-                "total_mass": 4250,
-                "calibration_date": "2026-04-01"
-            }
-        ]
-    else:
-        for m in st.session_state.air_meters:
-            if "calibration_date" not in m:
-                m["calibration_date"] = "2026-04-01"
+if all_meters:
+    st.session_state.air_meters = all_meters
+else:
+    st.session_state.air_meters = [
+        {
+            "id": 1,
+            "meter_name": "C13-WP776185XT",
+            "container_volume": 7000,
+            "total_mass": 4250,
+            "calibration_date": "2026-04-01"
+        }
+    ]
+
+for m in st.session_state.air_meters:
+    if "calibration_date" not in m:
+        m["calibration_date"] = "2026-04-01"
+
+# 統合したマスター情報を現在のプロファイルファイルに保存して同期する
+try:
+    with open(MASTER_FILE, "w", encoding="utf-8") as f:
+        json.dump({"plants": st.session_state.plants, "air_meters": st.session_state.air_meters}, f, ensure_ascii=False, indent=4)
+except Exception:
+    pass
 
 if "meas_site_name_input" not in st.session_state:
     st.session_state.meas_site_name_input = "〇〇現場"
