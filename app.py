@@ -4,7 +4,6 @@ from datetime import datetime, date
 from zoneinfo import ZoneInfo
 import json
 import os
-import glob
 import urllib.request
 import urllib.error
 import streamlit.components.v1 as components
@@ -247,6 +246,10 @@ setInterval(() => {
 
 """, unsafe_allow_html=True)
 
+# 端末・ユーザーごとの独立した履歴ファイル切り替え
+# 端末・ユーザーごとの独立した履歴ファイル切り替え（ブラウザのlocalStorage自動記憶対応）
+# 端末・ユーザーごとの独立した履歴ファイル切り替え（URLパラメータ ＆ localStorage自動付与）
+# 端末・ブラウザごとのlocalStorage自動記憶 ＆ st.query_params 連携
 # 端末・ブラウザごとのlocalStorage自動記憶 ＆ st.query_params 連携
 query_user = st.query_params.get("user", "")
 
@@ -313,37 +316,26 @@ default_plant_id = device_settings.get("active_plant_id", 1)
 default_meter_name = device_settings.get("meter_name", "")
 
 
-# プラント・メーター情報の全プロファイル/旧ファイルからのスマート統合読み込み
+# プラント・メーター情報の全ファイルからの完全スマート統合
 all_plants = []
 all_meters = []
 
-# 1. 共有マスターファイルがあれば読み込む
-if os.path.exists(MASTER_FILE):
-    try:
-        with open(MASTER_FILE, "r", encoding="utf-8") as f:
-            m_data = json.load(f)
-            for p in m_data.get("plants", []):
-                if p not in all_plants:
-                    all_plants.append(p)
-            for m in m_data.get("air_meters", []):
-                if m not in all_meters:
-                    all_meters.append(m)
-    except Exception:
-        pass
-
-# 2. 他のすべての旧マスターファイルからも収集する（データ損失防止）
-for fn in glob.glob("master_settings_*.json"):
-    try:
-        with open(fn, "r", encoding="utf-8") as f:
-            m_data = json.load(f)
-            for p in m_data.get("plants", []):
-                if p not in all_plants:
-                    all_plants.append(p)
-            for m in m_data.get("air_meters", []):
-                if m not in all_meters:
-                    all_meters.append(m)
-    except Exception:
-        pass
+# 1. すべての master_settings*.json ファイルを走査してマージする
+files_to_check = ["master_settings.json"] + glob.glob("master_settings_*.json")
+for fn in files_to_check:
+    if os.path.exists(fn):
+        try:
+            with open(fn, "r", encoding="utf-8") as f:
+                m_data = json.load(f)
+                for p in m_data.get("plants", []):
+                    # 重複チェック（plant_nameとmix_nameが同じならスキップ、または既存に追加）
+                    if not any(existing.get("plant_name") == p.get("plant_name") and existing.get("mix_name") == p.get("mix_name") for existing in all_plants):
+                        all_plants.append(p)
+                for m in m_data.get("air_meters", []):
+                    if not any(existing.get("meter_name") == m.get("meter_name") for existing in all_meters):
+                        all_meters.append(m)
+        except Exception:
+            pass
 
 if all_plants:
     st.session_state.plants = all_plants
@@ -377,9 +369,9 @@ for m in st.session_state.air_meters:
     if "calibration_date" not in m:
         m["calibration_date"] = "2026-04-01"
 
-# 統合したマスター情報を共通ファイルに保存して同期する
+# 統合したマスター情報を master_settings.json に確実に保存
 try:
-    with open(MASTER_FILE, "w", encoding="utf-8") as f:
+    with open("master_settings.json", "w", encoding="utf-8") as f:
         json.dump({"plants": st.session_state.plants, "air_meters": st.session_state.air_meters}, f, ensure_ascii=False, indent=4)
 except Exception:
     pass
@@ -994,7 +986,7 @@ else:
                 label="履歴CSVダウンロード",
                 data=csv_data,
                 file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/css"
+                mime="text/csv"
             )
             if st.button("履歴をすべてクリア"):
                 st.session_state.history = []
