@@ -285,7 +285,7 @@ current_user_profile = st.session_state.get("device_user_id", "マイデータ")
 if not current_user_profile or current_user_profile == "default_user":
     current_user_profile = "マイデータ"
 
-MASTER_FILE = f"master_settings_{current_user_profile}.json"
+MASTER_FILE = "master_settings.json"
 HISTORY_FILE = f"history_store_{current_user_profile}.json"
 DEVICE_SETTINGS_FILE = f"device_settings_{current_user_profile}.json"
 current_user_profile = st.session_state.device_user_id
@@ -317,21 +317,7 @@ default_meter_name = device_settings.get("meter_name", "")
 all_plants = []
 all_meters = []
 
-# 1. 旧共通ファイルがあれば読み込む
-if os.path.exists("master_settings.json"):
-    try:
-        with open("master_settings.json", "r", encoding="utf-8") as f:
-            m_data = json.load(f)
-            for p in m_data.get("plants", []):
-                if p not in all_plants:
-                    all_plants.append(p)
-            for m in m_data.get("air_meters", []):
-                if m not in all_meters:
-                    all_meters.append(m)
-    except Exception:
-        pass
-
-# 2. 現在のプロファイルのマスターファイルがあれば読み込む
+# 1. 共有マスターファイルがあれば読み込む
 if os.path.exists(MASTER_FILE):
     try:
         with open(MASTER_FILE, "r", encoding="utf-8") as f:
@@ -345,7 +331,7 @@ if os.path.exists(MASTER_FILE):
     except Exception:
         pass
 
-# 3. 他のすべての master_settings_*.json からも収集する（データ損失防止）
+# 2. 他のすべての旧マスターファイルからも収集する（データ損失防止）
 for fn in glob.glob("master_settings_*.json"):
     try:
         with open(fn, "r", encoding="utf-8") as f:
@@ -391,7 +377,7 @@ for m in st.session_state.air_meters:
     if "calibration_date" not in m:
         m["calibration_date"] = "2026-04-01"
 
-# 統合したマスター情報を現在のプロファイルファイルに保存して同期する
+# 統合したマスター情報を共通ファイルに保存して同期する
 try:
     with open(MASTER_FILE, "w", encoding="utf-8") as f:
         json.dump({"plants": st.session_state.plants, "air_meters": st.session_state.air_meters}, f, ensure_ascii=False, indent=4)
