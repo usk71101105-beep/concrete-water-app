@@ -346,6 +346,24 @@ else:
             "c": 300,
             "s": 780,
             "g": 950,
+        },
+        {
+            "id": 2,
+            "plant_name": "多摩生コン",
+            "mix_name": "30-18-20-N",
+            "w_design": 170,
+            "c": 320,
+            "s": 760,
+            "g": 930,
+        },
+        {
+            "id": 3,
+            "plant_name": "青梅クリート",
+            "mix_name": "24-10-20-BB",
+            "w_design": 168,
+            "c": 290,
+            "s": 790,
+            "g": 960,
         }
     ]
 
@@ -359,6 +377,13 @@ else:
             "container_volume": 7000,
             "total_mass": 4250,
             "calibration_date": "2026-04-01"
+        },
+        {
+            "id": 2,
+            "meter_name": "A-02 (東京多摩)",
+            "container_volume": 7000,
+            "total_mass": 4280,
+            "calibration_date": "2026-05-15"
         }
     ]
 
