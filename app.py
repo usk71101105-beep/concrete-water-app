@@ -317,20 +317,20 @@ default_meter_name = device_settings.get("meter_name", "")
 all_plants = []
 all_meters = []
 
-# 1. すべての master_settings*.json ファイルを走査してマージする
-files_to_check = ["master_settings.json"] + glob.glob("master_settings_*.json")
+# 1. すべての master_settings*.json および concrete_master_settings*.json ファイルを走査してマージする
+files_to_check = ["master_settings.json"] + glob.glob("master_settings_*.json") + glob.glob("concrete_master_settings_*.json") + glob.glob("*.json")
 for fn in files_to_check:
     if os.path.exists(fn):
         try:
             with open(fn, "r", encoding="utf-8") as f:
                 m_data = json.load(f)
-                for p in m_data.get("plants", []):
-                    # 重複チェック（plant_nameとmix_nameが同じならスキップ、または既存に追加）
-                    if not any(existing.get("plant_name") == p.get("plant_name") and existing.get("mix_name") == p.get("mix_name") for existing in all_plants):
-                        all_plants.append(p)
-                for m in m_data.get("air_meters", []):
-                    if not any(existing.get("meter_name") == m.get("meter_name") for existing in all_meters):
-                        all_meters.append(m)
+                if isinstance(m_data, dict):
+                    for p in m_data.get("plants", []):
+                        if not any(existing.get("plant_name") == p.get("plant_name") and existing.get("mix_name") == p.get("mix_name") for existing in all_plants):
+                            all_plants.append(p)
+                    for m in m_data.get("air_meters", []):
+                        if not any(existing.get("meter_name") == m.get("meter_name") for existing in all_meters):
+                            all_meters.append(m)
         except Exception:
             pass
 
