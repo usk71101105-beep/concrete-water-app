@@ -4,6 +4,7 @@ from datetime import datetime, date
 from zoneinfo import ZoneInfo
 import json
 import os
+import glob
 import urllib.request
 import urllib.error
 import streamlit.components.v1 as components
@@ -246,10 +247,6 @@ setInterval(() => {
 
 """, unsafe_allow_html=True)
 
-# 端末・ユーザーごとの独立した履歴ファイル切り替え
-# 端末・ユーザーごとの独立した履歴ファイル切り替え（ブラウザのlocalStorage自動記憶対応）
-# 端末・ユーザーごとの独立した履歴ファイル切り替え（URLパラメータ ＆ localStorage自動付与）
-# 端末・ブラウザごとのlocalStorage自動記憶 ＆ st.query_params 連携
 # 端末・ブラウザごとのlocalStorage自動記憶 ＆ st.query_params 連携
 query_user = st.query_params.get("user", "")
 
@@ -986,7 +983,7 @@ else:
                 label="履歴CSVダウンロード",
                 data=csv_data,
                 file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/csv"
+                mime="text/css"
             )
             if st.button("履歴をすべてクリア"):
                 st.session_state.history = []
