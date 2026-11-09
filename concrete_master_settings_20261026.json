@@ -47,11 +47,11 @@
         {
             "id": 8,
             "plant_name": "小沢建材",
-            "mix_name": "24-8-20-BB",
-            "w_design": 158.0,
-            "c": 274.0,
-            "s": 928.0,
-            "g": 957.0
+            "mix_name": "24-18-20-N",
+            "w_design": 175,
+            "c": 314,
+            "s": 925,
+            "g": 890
         },
         {
             "id": 9,
@@ -106,15 +106,24 @@
             "c": 312.0,
             "s": 821.0,
             "g": 1013.0
+        },
+        {
+            "id": 8,
+            "plant_name": "小沢建材",
+            "mix_name": "24-8-20-BB",
+            "w_design": 158.0,
+            "c": 274.0,
+            "s": 928.0,
+            "g": 957.0
         }
     ],
     "air_meters": [
         {
             "id": 2,
             "meter_name": "C13-WP776185XT",
-            "container_volume": 7020.0,
-            "total_mass": 6323.0,
-            "calibration_date": "2026-10-01"
+            "container_volume": 7032,
+            "total_mass": 6342,
+            "calibration_date": "2026-11-16"
         },
         {
             "id": 3,
@@ -167,13 +176,6 @@
         },
         {
             "id": 10,
-            "meter_name": "C13WP-776328XT",
-            "container_volume": 7028.0,
-            "total_mass": 6310.0,
-            "calibration_date": "2026-10-01"
-        },
-        {
-            "id": 11,
             "meter_name": "C13WP-776328XT",
             "container_volume": 7028.0,
             "total_mass": 6310.0,
