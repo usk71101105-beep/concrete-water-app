@@ -420,6 +420,7 @@ if st.session_state.show_exact_result_view:
     water_error = diff_mass * 0.7
     estimated_water = w_des + water_error
     diff_val = round(water_error, 0)
+    diff_str = f"{int(diff_val):+d}"
 
     components.html(f"""
     <!DOCTYPE html>
@@ -564,7 +565,7 @@ if st.session_state.show_exact_result_view:
 
             <div class="result-grid">
                 <div class="r-label-black">誤差</div>
-                <div class="r-val-black">{int(diff_val)}</div>
+                <div class="r-val-black">{diff_str}</div>
                 <div class="r-unit-black">kg/m³</div>
             </div>
         </div>
@@ -709,6 +710,7 @@ else:
             water_error_p = diff_mass_p * 0.7
             estimated_water_p = w_des_p + water_error_p
             diff_val_p = round(water_error_p, 0)
+            diff_str_p = f"{int(diff_val_p):+d}"
 
             preview_html = f"""
             <div style="background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 10px 0; border: 1px solid #cbd5e1;">
@@ -716,7 +718,7 @@ else:
                 <div style="display: flex; justify-content: space-around; font-size: 14px; font-weight: bold; color: #0f172a;">
                     <span>推定単位水量: <strong style="color: #2563eb; font-size: 16px;">{int(round(estimated_water_p))}</strong> kg/m³</span>
                     <span>配合計画水量: <strong>{int(round(w_des_p))}</strong> kg/m³</span>
-                    <span>差分: <strong style="color: {("#dc2626" if int(diff_val_p) > 0 else "#2563eb")};">{int(diff_val_p):+d}</strong> kg/m³</span>
+                    <span>差分: <strong style="color: {("#dc2626" if int(diff_val_p) > 0 else "#2563eb")};">{diff_str_p}</strong> kg/m³</span>
                 </div>
             </div>
             """
@@ -751,6 +753,7 @@ else:
                 water_error_auto = diff_mass_auto * 0.7
                 estimated_water_auto = w_des_auto + water_error_auto
                 diff_val_auto = round(water_error_auto, 0)
+                diff_str_auto = f"{int(diff_val_auto):+d}"
                 
                 new_record = {
                     "測定者": inspector_name,
@@ -762,7 +765,7 @@ else:
                     "設計単位水量": int(round(w_des_auto)),
                     "推定単位水量": int(round(estimated_water_auto)),
                     "測定空気量(%)": m_air_auto,
-                    "誤差": int(diff_val_auto),
+                    "誤差": diff_str_auto,
                     "エアメーター": meter.get('meter_name', 'C13-WP776185XT')
                 }
                 st.session_state.history.append(new_record)
@@ -894,7 +897,8 @@ else:
             for idx, hist in enumerate(st.session_state.history):
                 est_w = hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))
                 des_w = hist.get("設計単位水量", 0)
-                err_val = hist.get("誤差", est_w - des_w)
+                err_raw = hist.get("誤差", est_w - des_w)
+                err_str = err_raw if isinstance(err_raw, str) else f"{int(err_raw):+d}"
                 meter_str = hist.get("エアメーター", "C13-WP776185XT")
                 
                 st.markdown(f"""
@@ -903,7 +907,7 @@ else:
                         📌 No.{idx+1} ｜ {hist['日時']} | {hist['施工者']}
                     </div>
                     <div style="color: #93c5fd; font-size: 13px; margin-bottom: 4px;">
-                        工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
+                        工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))}</strong> kg/m³ (誤差: <strong style="color:#60a5fa;">{err_str}</strong> kg/m³)
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -919,7 +923,7 @@ else:
                         st.write(f"- **使用エアメーター**: {meter_str}")
                         st.write(f"- **設計単位水量**: {hist['設計単位水量']} kg/m³")
                         st.write(f"- **推定単位水量**: {hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))} kg/m³")
-                        st.write(f"- **誤差**: {err_val:+d} kg/m³")
+                        st.write(f"- **誤差**: {err_str} kg/m³")
                         st.write(f"- **測定空気量**: {hist['測定空気量(%)']}%")
                     with col_det2:
                         st.markdown("<div style='font-weight:bold; color:#000000; margin-bottom:5px;'>操作</div>", unsafe_allow_html=True)
