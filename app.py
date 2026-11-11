@@ -597,8 +597,8 @@ else:
         if not st.session_state.plants or not st.session_state.air_meters:
             st.warning("先に下部のメニューから「プラント」および「メーター」の登録を行ってください。")
         else:
-            site_name = st.text_input("施工者", value=st.session_state.get("meas_site_name_input", "〇〇現場"), key="meas_site_name_field")
-            project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", "〇〇道路改良工事"), key="meas_project_name_field")
+            site_name = st.text_input("施工者", value=st.session_state.get("meas_site_name_input", ""), key="meas_site_name_field")
+            project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", ""), key="meas_project_name_field")
             col_insp1, col_insp2 = st.columns([3, 1])
             with col_insp1:
                 inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", default_inspector), key="meas_inspector_field")
