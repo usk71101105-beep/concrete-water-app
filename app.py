@@ -392,9 +392,12 @@ def save_history_store():
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(st.session_state.history, f, ensure_ascii=False, indent=4)
 
+# エクセルの計算式・丸め処理に完全同期した単位体積質量・誤差計算関数
 def calculate_unit_vol_mass_mix(w, c, s, g):
     mass_sum = float(w) + float(c) + float(s) + float(g)
-    return 2630.714 if (abs(float(w)-168)<1 and abs(float(c)-323)<1 and abs(float(s)-884)<1) else (mass_sum / 0.878)
+    air_fixed = 4.5
+    vol_without_air = round(1.0 - (air_fixed + float(c) * 0.001) * 0.01, 3)
+    return round(mass_sum / vol_without_air, 1) if vol_without_air > 0 else 0
 
 active_tab = st.session_state.current_tab
 
@@ -421,12 +424,12 @@ if st.session_state.show_exact_result_view:
     bonezai_hosei = 0.0
     sample_air = measured_air - bonezai_hosei
     sample_mass = measured_mass - total_mass
-    sample_vol_without_air = container_vol * (1.0 - sample_air * 0.01)
-    sample_unit_vol_mass = (sample_mass / sample_vol_without_air) * 1000 if sample_vol_without_air > 0 else 0
+    sample_vol_without_air = round(container_vol * (1.0 - sample_air * 0.01), 0)
+    sample_unit_vol_mass = round((sample_mass / sample_vol_without_air) * 1000, 0) if sample_vol_without_air > 0 else 0
     diff_mass = unit_vol_mass_mix - sample_unit_vol_mass
     water_error = diff_mass * 0.7
     estimated_water = w_des + water_error
-    diff_val = round(estimated_water - w_des)
+    diff_val = round(water_error, 0)
 
     components.html(f"""
     <!DOCTYPE html>
@@ -571,7 +574,7 @@ if st.session_state.show_exact_result_view:
 
             <div class="result-grid">
                 <div class="r-label-black">誤差</div>
-                <div class="r-val-black">{diff_val}</div>
+                <div class="r-val-black">{int(diff_val)}</div>
                 <div class="r-unit-black">kg/m³</div>
             </div>
         </div>
@@ -706,12 +709,12 @@ else:
             
             sample_air_p = m_air_p
             sample_mass_p = m_mass_p - t_mass_p
-            sample_vol_without_air_p = c_vol_p * (1.0 - sample_air_p * 0.01)
-            sample_unit_vol_mass_p = (sample_mass_p / sample_vol_without_air_p) * 1000 if sample_vol_without_air_p > 0 else 0
+            sample_vol_without_air_p = round(c_vol_p * (1.0 - sample_air_p * 0.01), 0)
+            sample_unit_vol_mass_p = round((sample_mass_p / sample_vol_without_air_p) * 1000, 0) if sample_vol_without_air_p > 0 else 0
             diff_mass_p = unit_vol_mass_mix_p - sample_unit_vol_mass_p
             water_error_p = diff_mass_p * 0.7
             estimated_water_p = w_des_p + water_error_p
-            diff_val_p = round(estimated_water_p - w_des_p)
+            diff_val_p = round(water_error_p, 0)
 
             preview_html = f"""
             <div style="background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 10px 0; border: 1px solid #cbd5e1;">
@@ -719,7 +722,7 @@ else:
                 <div style="display: flex; justify-content: space-around; font-size: 14px; font-weight: bold; color: #0f172a;">
                     <span>推定単位水量: <strong style="color: #2563eb; font-size: 16px;">{int(round(estimated_water_p))}</strong> kg/m³</span>
                     <span>配合計画水量: <strong>{int(round(w_des_p))}</strong> kg/m³</span>
-                    <span>差分: <strong style="color: {("#dc2626" if diff_val_p > 0 else "#2563eb")};">{diff_val_p:+d}</strong> kg/m³</span>
+                    <span>差分: <strong style="color: {("#dc2626" if int(diff_val_p) > 0 else "#2563eb")};">{int(diff_val_p):+d}</strong> kg/m³</span>
                 </div>
             </div>
             """
@@ -747,12 +750,12 @@ else:
                 m_air_auto = float(st.session_state.get("meas_measured_air", 4.3))
                 
                 sample_mass_auto = m_mass_auto - t_mass_auto
-                sample_vol_without_air_auto = c_vol_auto * (1.0 - m_air_auto * 0.01)
-                sample_unit_vol_mass_auto = (sample_mass_auto / sample_vol_without_air_auto) * 1000 if sample_vol_without_air_auto > 0 else 0
+                sample_vol_without_air_auto = round(c_vol_auto * (1.0 - m_air_auto * 0.01), 0)
+                sample_unit_vol_mass_auto = round((sample_mass_auto / sample_vol_without_air_auto) * 1000, 0) if sample_vol_without_air_auto > 0 else 0
                 diff_mass_auto = unit_vol_mass_mix_auto - sample_unit_vol_mass_auto
                 water_error_auto = diff_mass_auto * 0.7
                 estimated_water_auto = w_des_auto + water_error_auto
-                diff_val_auto = round(estimated_water_auto - w_des_auto)
+                diff_val_auto = round(water_error_auto, 0)
                 
                 new_record = {
                     "測定者": inspector_name,
@@ -764,7 +767,7 @@ else:
                     "設計単位水量": int(round(w_des_auto)),
                     "推定単位水量": int(round(estimated_water_auto)),
                     "測定空気量(%)": m_air_auto,
-                    "誤差": diff_val_auto,
+                    "誤差": int(diff_val_auto),
                     "エアメーター": meter.get('meter_name', 'C13-WP776185XT')
                 }
                 st.session_state.history.append(new_record)
@@ -952,7 +955,7 @@ else:
                 label="履歴CSVダウンロード",
                 data=csv_data,
                 file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/css"
+                mime="text/csv"
             )
             if st.button("履歴をすべてクリア"):
                 st.session_state.history = []
