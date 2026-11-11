@@ -904,7 +904,7 @@ else:
                 st.markdown(f"""
                 <div style="background-color: #0f172a; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; border: 2px solid #3b82f6;">
                     <div style="color: #ffffff; font-weight: bold; font-size: 15px; margin-bottom: 2px;">
-                        📌 No.{idx+1} ｜ {hist['日時']} | {hist['施工者']}
+                        📌 No.{idx+1} | {hist.get('日時', '-')} | {hist.get('施工者', hist.get('現場名', '未設定'))}
                     </div>
                     <div style="color: #93c5fd; font-size: 13px; margin-bottom: 4px;">
                         工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))}</strong> kg/m³ (誤差: <strong style="color:#60a5fa;">{err_str}</strong> kg/m³)
