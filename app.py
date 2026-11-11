@@ -44,7 +44,6 @@ st.markdown("""
 .stApp {
     background-color: #b0b0b0 !important;
 }
-/* Streamlitの上の黒いバー、下のデプロイボタン・バッジ・フッターを完全に非表示にする */
 header[data-testid="stHeader"] {
     display: none !important;
 }
@@ -66,7 +65,6 @@ div[data-testid="stStatusWidget"] {
 #MainMenu {
     visibility: hidden !important;
 }
-/* 追加：右下のバッジやウォーターマークを完全に非表示にする */
 div[class*="viewerBadge"] {
     display: none !important;
 }
@@ -142,8 +140,6 @@ div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] span,
 div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] label {
     color: #ffffff !important;
 }
-
-/* 画面右下に固定配置されるStreamlitのバッジやボタンを強制非表示にする */
 div[style*="position: fixed"][style*="bottom"],
 div[style*="position:fixed"][style*="bottom"] {
     display: none !important;
@@ -155,20 +151,15 @@ a[href*="streamlit.cloud"] {
 iframe[src*="streamlit"] {
     display: none !important;
 }
-
-
-/* アイコンやバッジが万が一表示されても、クリック（タップ）に反応しないようにする（すり抜ける） */
 div[class*="viewerBadge"],
 .styles_viewerBadge__1yG5_,
 div[style*="position: fixed"],
 div[style*="position:fixed"] {
     pointer-events: none !important;
 }
-
 </style>
 
 <script>
-// Streamlitのバッジや不要な要素をシャドウDOMも含めて徹底的に根絶するスクリプト
 function removeBadges() {
     const selectors = [
         '[class*="viewerBadge"]',
@@ -355,9 +346,9 @@ except Exception:
     pass
 
 if "meas_site_name_input" not in st.session_state:
-    st.session_state.meas_site_name_input = "〇〇現場"
+    st.session_state.meas_site_name_input = ""
 if "meas_project_name_input" not in st.session_state:
-    st.session_state.meas_project_name_input = "〇〇道路改良工事"
+    st.session_state.meas_project_name_input = ""
 if "meas_inspector_input" not in st.session_state or st.session_state.meas_inspector_input == "内藤 祐介":
     st.session_state.meas_inspector_input = default_inspector
 
@@ -392,7 +383,6 @@ def save_history_store():
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(st.session_state.history, f, ensure_ascii=False, indent=4)
 
-# エクセルの計算式・丸め処理に完全同期した単位体積質量・誤差計算関数
 def calculate_unit_vol_mass_mix(w, c, s, g):
     mass_sum = float(w) + float(c) + float(s) + float(g)
     air_fixed = 4.5
@@ -597,8 +587,8 @@ else:
         if not st.session_state.plants or not st.session_state.air_meters:
             st.warning("先に下部のメニューから「プラント」および「メーター」の登録を行ってください。")
         else:
-            site_name = st.text_input("施工者", value=st.session_state.get("meas_site_name_input", "入力してください"), key="meas_site_name_field")
-            project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", "入力してください"), key="meas_project_name_field")
+            site_name = st.text_input("施工者", value=st.session_state.get("meas_site_name_input", ""), key="meas_site_name_field")
+            project_name = st.text_input("工事件名", value=st.session_state.get("meas_project_name_input", ""), key="meas_project_name_field")
             col_insp1, col_insp2 = st.columns([3, 1])
             with col_insp1:
                 inspector_name = st.text_input("測定者（担当者）名", value=st.session_state.get("meas_inspector_input", default_inspector), key="meas_inspector_field")
@@ -729,53 +719,57 @@ else:
             st.markdown(preview_html, unsafe_allow_html=True)
 
             if st.button("🌟 単位水量推定結果（計算＆自動保存）", type="primary", use_container_width=True):
-                save_device_settings({
-                    "inspector_name": inspector_name,
-                    "active_plant_id": plant.get('id', 1),
-                    "meter_name": meter.get('meter_name', '')
-                })
-                
-                now_jp = get_japan_now()
-                record_time = now_jp.strftime("%Y-%m-%d %H:%M")
-                
-                w_des_auto = float(plant['w_design'])
-                c_val_auto = float(plant['c'])
-                s_val_auto = float(plant['s'])
-                g_val_auto = float(plant['g'])
-                unit_vol_mass_mix_auto = calculate_unit_vol_mass_mix(w_des_auto, c_val_auto, s_val_auto, g_val_auto)
-                
-                c_vol_auto = float(st.session_state.get("meas_container_vol", 7000))
-                t_mass_auto = float(st.session_state.get("meas_total_mass", 4250))
-                m_mass_auto = float(st.session_state.get("meas_measured_mass", 22585))
-                m_air_auto = float(st.session_state.get("meas_measured_air", 4.3))
-                
-                sample_mass_auto = m_mass_auto - t_mass_auto
-                sample_vol_without_air_auto = round(c_vol_auto * (1.0 - m_air_auto * 0.01), 0)
-                sample_unit_vol_mass_auto = round((sample_mass_auto / sample_vol_without_air_auto) * 1000, 0) if sample_vol_without_air_auto > 0 else 0
-                diff_mass_auto = unit_vol_mass_mix_auto - sample_unit_vol_mass_auto
-                water_error_auto = diff_mass_auto * 0.7
-                estimated_water_auto = w_des_auto + water_error_auto
-                diff_val_auto = round(water_error_auto, 0)
-                
-                new_record = {
-                    "測定者": inspector_name,
-                    "日時": record_time,
-                    "現場名": site_name,
-                    "工事件名": project_name,
-                    "プラント": plant['plant_name'],
-                    "配合": plant['mix_name'],
-                    "設計単位水量": int(round(w_des_auto)),
-                    "推定単位水量": int(round(estimated_water_auto)),
-                    "測定空気量(%)": m_air_auto,
-                    "誤差": int(diff_val_auto),
-                    "エアメーター": meter.get('meter_name', 'C13-WP776185XT')
-                }
-                st.session_state.history.append(new_record)
-                save_history_store()
-                send_to_spreadsheet(new_record)
-                
-                st.session_state.show_exact_result_view = True
-                st.rerun()
+                # 必須項目の入力チェック
+                if not site_name.strip() or not project_name.strip() or not inspector_name.strip():
+                    st.warning("⚠️ 入力してください（施工者、工事件名、測定者名が未入力です）")
+                else:
+                    save_device_settings({
+                        "inspector_name": inspector_name,
+                        "active_plant_id": plant.get('id', 1),
+                        "meter_name": meter.get('meter_name', '')
+                    })
+                    
+                    now_jp = get_japan_now()
+                    record_time = now_jp.strftime("%Y-%m-%d %H:%M")
+                    
+                    w_des_auto = float(plant['w_design'])
+                    c_val_auto = float(plant['c'])
+                    s_val_auto = float(plant['s'])
+                    g_val_auto = float(plant['g'])
+                    unit_vol_mass_mix_auto = calculate_unit_vol_mass_mix(w_des_auto, c_val_auto, s_val_auto, g_val_auto)
+                    
+                    c_vol_auto = float(st.session_state.get("meas_container_vol", 7000))
+                    t_mass_auto = float(st.session_state.get("meas_total_mass", 4250))
+                    m_mass_auto = float(st.session_state.get("meas_measured_mass", 22585))
+                    m_air_auto = float(st.session_state.get("meas_measured_air", 4.3))
+                    
+                    sample_mass_auto = m_mass_auto - t_mass_auto
+                    sample_vol_without_air_auto = round(c_vol_auto * (1.0 - m_air_auto * 0.01), 0)
+                    sample_unit_vol_mass_auto = round((sample_mass_auto / sample_vol_without_air_auto) * 1000, 0) if sample_vol_without_air_auto > 0 else 0
+                    diff_mass_auto = unit_vol_mass_mix_auto - sample_unit_vol_mass_auto
+                    water_error_auto = diff_mass_auto * 0.7
+                    estimated_water_auto = w_des_auto + water_error_auto
+                    diff_val_auto = round(water_error_auto, 0)
+                    
+                    new_record = {
+                        "測定者": inspector_name,
+                        "日時": record_time,
+                        "施工者": site_name,
+                        "工事件名": project_name,
+                        "プラント": plant['plant_name'],
+                        "配合": plant['mix_name'],
+                        "設計単位水量": int(round(w_des_auto)),
+                        "推定単位水量": int(round(estimated_water_auto)),
+                        "測定空気量(%)": m_air_auto,
+                        "誤差": int(diff_val_auto),
+                        "エアメーター": meter.get('meter_name', 'C13-WP776185XT')
+                    }
+                    st.session_state.history.append(new_record)
+                    save_history_store()
+                    send_to_spreadsheet(new_record)
+                    
+                    st.session_state.show_exact_result_view = True
+                    st.rerun()
 
     elif active_tab == "プラント":
         st.header("プラント・配合マスタ登録および一覧")
@@ -905,7 +899,7 @@ else:
                 st.markdown(f"""
                 <div style="background-color: #0f172a; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; border: 2px solid #3b82f6;">
                     <div style="color: #ffffff; font-weight: bold; font-size: 15px; margin-bottom: 2px;">
-                        📌 No.{idx+1} ｜ {hist['日時']} | {hist['現場名']}
+                        📌 No.{idx+1} ｜ {hist['日時']} | {hist['施工者']}
                     </div>
                     <div style="color: #93c5fd; font-size: 13px; margin-bottom: 4px;">
                         工事件名: {hist['工事件名']} (測定者: {hist.get('測定者', '-')}) ｜ 推定水量: <strong style="color:#ffffff; font-size:15px;">{hist.get('推定単位水量(kg/m3)', hist.get('推定単位水量', 0))}</strong> kg/m³ (誤差: <strong style="color:{'#f87171' if err_val > 0 else '#60a5fa'};">{err_val:+d}</strong> kg/m³)
@@ -917,7 +911,7 @@ else:
                     col_det1, col_det2 = st.columns([7, 3])
                     with col_det1:
                         st.write(f"- **日時**: {hist['日時']}")
-                        st.write(f"- **現場名**: {hist['現場名']}")
+                        st.write(f"- **施工者**: {hist['施工者']}")
                         st.write(f"- **工事件名**: {hist['工事件名']}")
                         st.write(f"- **測定者**: {hist.get('測定者', '-')}")
                         st.write(f"- **プラント・配合**: {hist['プラント']} ({hist['配合']})")
@@ -955,7 +949,7 @@ else:
                 label="履歴CSVダウンロード",
                 data=csv_data,
                 file_name=f"concrete_quality_{get_japan_now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/csv"
+                mime="text/css"
             )
             if st.button("履歴をすべてクリア"):
                 st.session_state.history = []
