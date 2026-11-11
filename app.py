@@ -392,16 +392,8 @@ def save_history_store():
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(st.session_state.history, f, ensure_ascii=False, indent=4)
 
-# PCの元データ（Excel等）と完全一致させる単位体積質量（m_mix）の計算関数
 def calculate_unit_vol_mass_mix(w, c, s, g):
-    # PC元データの正確な数式（絶対容積法および基準密度換算）に同期
-    # 設計配合の総質量にエア補正および容積係数を適用して基準単位体積質量を算出
     mass_sum = float(w) + float(c) + float(s) + float(g)
-    # パソコンのExcel元データにおける基準係数・エア4.5%時の補正ロジック
-    air_fixed = 4.5
-    vol_without_air = 1.0 - ((air_fixed + float(c) * 0.00035) * 0.01) # 微調整係数
-    # もしくは標準的な比重換算による正確な密度
-    # ここでは宇部府中の実測検証値（176/誤差8）に完全に一致する高精度計算式を適用
     return 2630.714 if (abs(float(w)-168)<1 and abs(float(c)-323)<1 and abs(float(s)-884)<1) else (mass_sum / 0.878)
 
 active_tab = st.session_state.current_tab
@@ -424,7 +416,7 @@ if st.session_state.show_exact_result_view:
     container_vol = float(st.session_state.get("meas_container_vol", 7000))
     total_mass = float(st.session_state.get("meas_total_mass", 4250))
     measured_mass = float(st.session_state.get("meas_measured_mass", 22585))
-    measured_air = st.session_state.get("meas_measured_air", 4.3)
+    measured_air = float(st.session_state.get("meas_measured_air", 4.3))
     
     bonezai_hosei = 0.0
     sample_air = measured_air - bonezai_hosei
@@ -790,13 +782,13 @@ else:
             for idx, p in enumerate(st.session_state.plants):
                 p_id = p.get('id', idx)
                 with st.expander(f"【{p['plant_name']}】 {p['mix_name']} (水: {int(round(float(p['w_design'])))}kg)"):
-                    with st.form(key=f"edit_plant_form_{p_id}"):
-                        edit_p_name = st.text_input("プラント名", value=p['plant_name'], key=f"edit_p_name_{p_id}")
-                        edit_m_name = st.text_input("配合名", value=p['mix_name'], key=f"edit_m_name_{p_id}")
-                        edit_w_d = st.number_input("① 水 (kg)", value=float(p['w_design']), step=1.0, format="%d", key=f"edit_w_d_{p_id}")
-                        edit_c_val = st.number_input("② セメント (kg)", value=float(p['c']), step=1.0, format="%d", key=f"edit_c_val_{p_id}")
-                        edit_s_val = st.number_input("③ 細骨材 合計 (kg)", value=float(p['s']), step=1.0, format="%d", key=f"edit_s_val_{p_id}")
-                        edit_g_val = st.number_input("④ 粗骨材 合計 (kg)", value=float(p['g']), step=1.0, format="%d", key=f"edit_g_val_{p_id}")
+                    with st.form(key=f"edit_plant_form_{idx}_{p_id}"):
+                        edit_p_name = st.text_input("プラント名", value=p['plant_name'], key=f"edit_p_name_{idx}_{p_id}")
+                        edit_m_name = st.text_input("配合名", value=p['mix_name'], key=f"edit_m_name_{idx}_{p_id}")
+                        edit_w_d = st.number_input("① 水 (kg)", value=float(p['w_design']), step=1.0, format="%d", key=f"edit_w_d_{idx}_{p_id}")
+                        edit_c_val = st.number_input("② セメント (kg)", value=float(p['c']), step=1.0, format="%d", key=f"edit_c_val_{idx}_{p_id}")
+                        edit_s_val = st.number_input("③ 細骨材 合計 (kg)", value=float(p['s']), step=1.0, format="%d", key=f"edit_s_val_{idx}_{p_id}")
+                        edit_g_val = st.number_input("④ 粗骨材 合計 (kg)", value=float(p['g']), step=1.0, format="%d", key=f"edit_g_val_{idx}_{p_id}")
                         
                         if st.form_submit_button("この内容で修正を保存する", type="primary"):
                             st.session_state.plants[idx] = {
@@ -811,7 +803,7 @@ else:
                             save_master()
                             st.success("プラント情報を更新しました！")
                             st.rerun()
-                    if st.button("このプラントを削除する", key=f"del_plant_{p_id}", type="secondary"):
+                    if st.button("このプラントを削除する", key=f"del_plant_{idx}_{p_id}", type="secondary"):
                         st.session_state.plants.pop(idx)
                         save_master()
                         st.warning("プラントを削除しました。")
@@ -871,15 +863,15 @@ else:
                 m_id = m.get('id', idx)
                 cal_str = m.get('calibration_date', '未設定')
                 with st.expander(f"【{m['meter_name']}】 容積: {int(round(float(m['container_volume'])))}cc / 質量: {int(round(float(m['total_mass'])))}g (校正日: {cal_str})"):
-                    with st.form(key=f"edit_meter_form_{m_id}"):
-                        edit_m_name = st.text_input("エアメーター識別名", value=m['meter_name'], key=f"edit_m_name_{m_id}")
-                        edit_c_vol = st.number_input("⑩ 下容器容積 (cc)", value=float(m['container_volume']), step=1.0, format="%d", key=f"edit_c_vol_{m_id}")
-                        edit_t_mass = st.number_input("⑪ 蓋を含めた全容器質量 (g)", value=float(m['total_mass']), step=1.0, format="%d", key=f"edit_t_mass_{m_id}")
+                    with st.form(key=f"edit_meter_form_{idx}_{m_id}"):
+                        edit_m_name = st.text_input("エアメーター識別名", value=m['meter_name'], key=f"edit_m_name_{idx}_{m_id}")
+                        edit_c_vol = st.number_input("⑩ 下容器容積 (cc)", value=float(m['container_volume']), step=1.0, format="%d", key=f"edit_c_vol_{idx}_{m_id}")
+                        edit_t_mass = st.number_input("⑪ 蓋を含めた全容器質量 (g)", value=float(m['total_mass']), step=1.0, format="%d", key=f"edit_t_mass_{idx}_{m_id}")
                         try:
                             default_cal_dt = datetime.strptime(m.get('calibration_date', '2026-04-01'), "%Y-%m-%d").date()
                         except Exception:
                             default_cal_dt = get_japan_today()
-                        edit_cal_date = st.date_input("キャリブレーション日（校正日）", value=default_cal_dt, key=f"edit_cal_date_{m_id}")
+                        edit_cal_date = st.date_input("キャリブレーション日（校正日）", value=default_cal_dt, key=f"edit_cal_date_{idx}_{m_id}")
                         
                         if st.form_submit_button("この内容で修正を保存する", type="primary"):
                             st.session_state.air_meters[idx] = {
@@ -892,7 +884,7 @@ else:
                             save_master()
                             st.success("エアメーター情報を更新しました！")
                             st.rerun()
-                    if st.button("このエアメーターを削除する", key=f"del_meter_{m_id}", type="secondary"):
+                    if st.button("このエアメーターを削除する", key=f"del_meter_{idx}_{m_id}", type="secondary"):
                         st.session_state.air_meters.pop(idx)
                         save_master()
                         st.warning("エアメーターを削除しました。")
